@@ -178,7 +178,39 @@
 .tl-zonebar-fill{height:100%;border-radius:4px;transition:width .2s;}
 .tl-remove{cursor:pointer;color:var(--text-faint);font-size:17px;line-height:1;padding:2px 4px;}
 .tl-remove:hover{color:var(--ink);}
-.tl-block-fields{display:flex;gap:8px;flex-wrap:wrap;}
+.tl-overview{
+  display:flex;
+  align-items:flex-end;
+  gap:2px;
+  height:64px;
+  margin-bottom:16px;
+  padding-bottom:8px;
+  border-bottom:1.5px solid var(--ink);
+}
+.tl-overview-bar{
+  flex:1 1 auto;
+  min-width:10px;
+  cursor:pointer;
+  border-radius:1px 1px 0 0;
+  transition:opacity .15s, outline .15s;
+  position:relative;
+}
+.tl-overview-bar:hover{opacity:.6;}
+.tl-overview-bar.active{outline:2px solid var(--ink);outline-offset:1px;}
+
+.tl-block-header{
+  display:flex;align-items:center;gap:10px;cursor:pointer;padding:1px 0;
+}
+.tl-block-summary{flex:1;font-size:12px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+.tl-block-summary b{color:var(--text);font-family:'Space Grotesk',sans-serif;}
+.tl-block-chevron{font-size:11px;color:var(--text-faint);transition:transform .15s;}
+.tl-block.open .tl-block-chevron{transform:rotate(90deg);}
+.tl-block-detail{display:none;margin-top:12px;}
+.tl-block.open .tl-block-detail{display:block;}
+.tl-block-fields-lg{display:flex;gap:8px;margin-bottom:8px;}
+.tl-block-fields-lg .tl-field input{
+  font-size:20px;font-weight:700;padding:12px 11px;text-align:center;font-family:'Space Grotesk',sans-serif;
+}
 .tl-block-fields .tl-field{min-width:90px;}
 .tl-block-fields .tl-field.lactate-field label{color:var(--ink);}
 .tl-block-fields .tl-field.lactate-field input{border-width:1.5px;border-color:var(--ink);}
@@ -290,6 +322,7 @@
   <div class="tl-card tl-hidden" id="blocksCard">
     <h3 id="blocksTitle">Blokken</h3>
     <div id="plannedNote"></div>
+    <div id="blocksOverview" class="tl-overview"></div>
     <div id="blocksList"></div>
     <div class="tl-actions">
       <button class="tl-btn tl-btn-ghost tl-btn-sm" id="addBlockBtn">+ Blok toevoegen</button>
@@ -328,6 +361,7 @@
   let settings = {apiKey:'', athleteId:'0', ftp:340, phone:''};
   let blocks = [];
   let currentActivity = null;
+  let expandedBlockId = null;
 
   // Deze app draait standalone in de browser (niet in het Claude-artifact-paneel),
   // dus window.storage bestaat hier niet. localStorage doet hetzelfde werk,
@@ -573,6 +607,7 @@
     $('blocksTitle').textContent = 'Blokken — ' + currentActivity.name + ' (gepland)';
     $('plannedNote').innerHTML = '<p class="tl-hint">Blokken zijn voorgevuld op basis van het schema van je trainer (duur + doelvermogen op basis van je ingestelde FTP). Vul lactaat/HF aan tijdens of na de rit. Deze training staat nog niet als voltooide activiteit in Intervals.icu, dus \\"Opslaan naar Intervals.icu\\" is pas beschikbaar zodra je deze daar terugvindt via \\"Voltooide trainingen ophalen\\" na de rit.</p>';
     blocks = parseWorkoutText(ev.description || '');
+    expandedBlockId = null;
     if(blocks.length===0) showToast('Kon geen blokken uit het schema herkennen — voeg ze handmatig toe');
     showBlocksCard();
   }
@@ -595,6 +630,7 @@
         lactate_target: '',
         note: ''
       }));
+      expandedBlockId = null;
       if(blocks.length===0) showToast('Geen automatisch gedetecteerde blokken — voeg ze handmatig toe');
     }catch(e){
       showToast('Kon blokken niet ophalen. Voeg ze handmatig toe.', true);
@@ -621,51 +657,99 @@
   }
 
   function addBlock(){
-    blocks.push({id:'b'+Math.random().toString(36).slice(2), duration_min:5, power:'', hr:'', lactate:'', lactate_target:'', note:''});
+    const newId = 'b'+Math.random().toString(36).slice(2);
+    blocks.push({id:newId, duration_min:5, power:'', hr:'', lactate:'', lactate_target:'', note:''});
+    expandedBlockId = newId;
     renderBlocks();
   }
   function removeBlock(id){
     blocks = blocks.filter(b=>b.id!==id);
+    if(expandedBlockId===id) expandedBlockId = null;
     renderBlocks();
   }
 
+  function toggleBlock(id){
+    expandedBlockId = (expandedBlockId === id) ? null : id;
+    renderBlocks();
+    if(expandedBlockId){
+      setTimeout(()=>{
+        const el = document.querySelector(`.tl-block[data-id="${expandedBlockId}"] input[data-field="power"]`);
+        if(el) el.focus();
+      }, 50);
+    }
+  }
+
+  function renderOverview(){
+    const wrap = $('blocksOverview');
+    if(blocks.length===0){ wrap.innerHTML=''; return; }
+    const totalDur = blocks.reduce((s,b)=> s + (Number(b.duration_min)||0.5), 0) || 1;
+    wrap.innerHTML = blocks.map((b,i)=>{
+      const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
+      const color = zoneColor(pct);
+      const heightPct = pct ? Math.max(Math.min(pct,150)/1.5, 12) : 12;
+      const growWeight = Math.max(Number(b.duration_min)||0.5, 0.3);
+      const active = b.id===expandedBlockId ? ' active' : '';
+      return `<div class="tl-overview-bar${active}" data-id="${b.id}" title="Blok ${i+1} · ${fmtDuration(b.duration_min)} min${b.power? ' · '+b.power+'W':''}" style="flex-grow:${growWeight};height:${heightPct}%;background:${color};"></div>`;
+    }).join('');
+    wrap.querySelectorAll('.tl-overview-bar').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        expandedBlockId = el.dataset.id;
+        renderBlocks();
+        document.querySelector(`.tl-block[data-id="${expandedBlockId}"]`)?.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(()=>{
+          const inp = document.querySelector(`.tl-block[data-id="${expandedBlockId}"] input[data-field="power"]`);
+          if(inp) inp.focus();
+        }, 200);
+      });
+    });
+  }
+
   function renderBlocks(){
+    renderOverview();
     const list = $('blocksList');
     list.innerHTML = blocks.map((b,i)=>{
       const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
       const color = zoneColor(pct);
       const width = pct ? Math.min(pct,150)/1.5 : 0;
+      const isOpen = b.id===expandedBlockId;
+      const lactateBadge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
       return `
-      <div class="tl-block" data-id="${b.id}">
-        <div class="tl-block-top">
+      <div class="tl-block${isOpen?' open':''}" data-id="${b.id}">
+        <div class="tl-block-header" data-action="toggle" data-id="${b.id}">
           <span class="tl-block-label">Blok ${i+1}</span>
           <div class="tl-zonebar"><div class="tl-zonebar-fill" style="width:${width}%;background:${color}"></div></div>
+          <span class="tl-block-summary"><b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${lactateBadge}</span>
           <span class="tl-remove" data-action="remove" data-id="${b.id}">✕</span>
+          <span class="tl-block-chevron">▸</span>
         </div>
-        <div class="tl-block-fields">
-          <div class="tl-field lactate-field" style="min-width:110px;">
-            <label>Doel-lactaat</label>
-            <input type="number" step="0.1" inputmode="decimal" value="${b.lactate_target}" data-field="lactate_target" data-id="${b.id}" placeholder="0.0">
+        <div class="tl-block-detail">
+          <div class="tl-block-fields-lg">
+            <div class="tl-field">
+              <label>Vermogen (W)</label>
+              <input type="number" inputmode="numeric" value="${b.power}" data-field="power" data-id="${b.id}">
+            </div>
+            <div class="tl-field lactate-field">
+              <label>Lactaat (mmol/L)</label>
+              <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
+            </div>
           </div>
-          <div class="tl-field lactate-field" style="min-width:110px;">
-            <label>Lactaat (mmol/L)</label>
-            <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
-          </div>
-          <div class="tl-field">
-            <label>Duur (min)</label>
-            <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
-          </div>
-          <div class="tl-field">
-            <label>Vermogen (W)</label>
-            <input type="number" inputmode="numeric" value="${b.power}" data-field="power" data-id="${b.id}">
-          </div>
-          <div class="tl-field">
-            <label>Hartslag</label>
-            <input type="number" inputmode="numeric" value="${b.hr}" data-field="hr" data-id="${b.id}">
-          </div>
-          <div class="tl-field" style="flex:2;min-width:160px;">
-            <label>Notitie</label>
-            <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
+          <div class="tl-block-fields">
+            <div class="tl-field lactate-field" style="min-width:110px;">
+              <label>Doel-lactaat</label>
+              <input type="number" step="0.1" inputmode="decimal" value="${b.lactate_target}" data-field="lactate_target" data-id="${b.id}" placeholder="0.0">
+            </div>
+            <div class="tl-field">
+              <label>Duur (min)</label>
+              <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
+            </div>
+            <div class="tl-field">
+              <label>Hartslag</label>
+              <input type="number" inputmode="numeric" value="${b.hr}" data-field="hr" data-id="${b.id}">
+            </div>
+            <div class="tl-field" style="flex:2;min-width:160px;">
+              <label>Notitie</label>
+              <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
+            </div>
           </div>
         </div>
       </div>`;
@@ -677,12 +761,36 @@
         const b = blocks.find(x=>x.id===id);
         if(!b) return;
         b[field] = (field==='note') ? e.target.value : (e.target.value===''? '' : Number(e.target.value));
-        if(field==='power' || field==='duration_min') renderBlocks();
+        if(field==='power' || field==='duration_min'){
+          renderOverview();
+          const summary = document.querySelector(`.tl-block[data-id="${id}"] .tl-block-summary`);
+          if(summary){
+            const p2 = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
+            const c2 = zoneColor(p2), w2 = p2? Math.min(p2,150)/1.5 : 0;
+            const fill = document.querySelector(`.tl-block[data-id="${id}"] .tl-zonebar-fill`);
+            if(fill){ fill.style.width = w2+'%'; fill.style.background = c2; }
+            const badge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
+            summary.innerHTML = `<b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${badge}`;
+          }
+        }
+        if(field==='lactate'){
+          const summary = document.querySelector(`.tl-block[data-id="${id}"] .tl-block-summary`);
+          if(summary){
+            const badge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
+            summary.innerHTML = `<b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${badge}`;
+          }
+        }
         updateMessagePreview();
       });
     });
     list.querySelectorAll('[data-action="remove"]').forEach(el=>{
-      el.addEventListener('click', (e)=> removeBlock(e.target.dataset.id));
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); removeBlock(e.target.dataset.id); });
+    });
+    list.querySelectorAll('[data-action="toggle"]').forEach(el=>{
+      el.addEventListener('click', (e)=>{
+        if(e.target.dataset.action==='remove') return;
+        toggleBlock(el.dataset.id);
+      });
     });
     updateMessagePreview();
   }
@@ -822,6 +930,7 @@
           const it = items[i];
           currentActivity = {id: it.id, name: it.name, date: it.date, pushable: !!it.pushable};
           blocks = it.blocks || [];
+          expandedBlockId = null;
           $('blocksTitle').textContent = 'Blokken — ' + it.name;
           $('plannedNote').innerHTML = '';
           $('blocksCard').classList.remove('tl-hidden');
