@@ -567,8 +567,9 @@
     let pendingRepeat = null;
     const repeatHeaderRe = /^(.*?)(\d+)\s*x$/i;
     const durationRe = /(\d+(?:\.\d+)?)\s*(h|m|s)\b/i;
+    const pctRangeRe = /(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*%/;
     const pctRe = /(\d+(?:\.\d+)?)\s*%/;
-    const wattRe = /(\d+(?:\.\d+)?)\s*w\b/i;
+    const wattRe = /(\d+(?:\.\d+)?)\s*(?:watts|watt|w)\b/i;
 
     function flushRepeat(){
       if(pendingRepeat){
@@ -589,9 +590,13 @@
         if(durMatch[2].toLowerCase()==='s') durationMin /= 60;
         let power = '';
         const wattMatch = body.match(wattRe);
+        const pctRangeMatch = body.match(pctRangeRe);
         const pctMatch = body.match(pctRe);
         if(wattMatch){
           power = Math.round(parseFloat(wattMatch[1]));
+        } else if(pctRangeMatch && settings.ftp){
+          const avgPct = (parseFloat(pctRangeMatch[1]) + parseFloat(pctRangeMatch[2])) / 2;
+          power = Math.round(settings.ftp * avgPct / 100);
         } else if(pctMatch && settings.ftp){
           power = Math.round(settings.ftp * parseFloat(pctMatch[1]) / 100);
         }
