@@ -171,11 +171,21 @@
   border-radius:var(--radius);
   padding:12px 13px;
   margin-bottom:8px;
+  transition:background .15s;
 }
+.tl-block.tl-intensity-dark{color:#fff;border-color:transparent;}
+.tl-block.tl-intensity-dark .tl-block-label{color:#fff;}
+.tl-block.tl-intensity-dark .tl-block-summary{color:rgba(255,255,255,.78);}
+.tl-block.tl-intensity-dark .tl-block-summary b{color:#fff;}
+.tl-block.tl-intensity-dark .tl-block-chevron{color:rgba(255,255,255,.6);}
+.tl-block.tl-intensity-dark .tl-remove{color:rgba(255,255,255,.55);}
+.tl-block.tl-intensity-dark .tl-remove:hover{color:#fff;}
+.tl-block.tl-intensity-dark .tl-field label{color:rgba(255,255,255,.75);}
+.tl-block.tl-intensity-dark .tl-field input{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.4);color:#fff;}
+.tl-block.tl-intensity-dark .tl-field input::placeholder{color:rgba(255,255,255,.4);}
+.tl-block.tl-intensity-dark .tl-field input:focus{border-color:#fff;}
 .tl-block-top{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
 .tl-block-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;min-width:56px;text-transform:uppercase;letter-spacing:.03em;}
-.tl-zonebar{flex:1;height:5px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;}
-.tl-zonebar-fill{height:100%;border-radius:4px;transition:width .2s;}
 .tl-remove{cursor:pointer;color:var(--text-faint);font-size:17px;line-height:1;padding:2px 4px;}
 .tl-remove:hover{color:var(--ink);}
 .tl-overview{
@@ -430,6 +440,9 @@
     if(pct<106) return '#454545';
     if(pct<121) return '#1F1F1F';
     return '#0A0A0A';
+  }
+  function isDarkIntensity(pct){
+    return pct!=null && pct>=76;
   }
 
   async function loadSettings(){
@@ -710,14 +723,13 @@
     list.innerHTML = blocks.map((b,i)=>{
       const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
       const color = zoneColor(pct);
-      const width = pct ? Math.min(pct,150)/1.5 : 0;
+      const dark = isDarkIntensity(pct);
       const isOpen = b.id===expandedBlockId;
       const lactateBadge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
       return `
-      <div class="tl-block${isOpen?' open':''}" data-id="${b.id}">
+      <div class="tl-block${isOpen?' open':''}${dark?' tl-intensity-dark':''}" data-id="${b.id}" style="background:${color};">
         <div class="tl-block-header" data-action="toggle" data-id="${b.id}">
           <span class="tl-block-label">Blok ${i+1}</span>
-          <div class="tl-zonebar"><div class="tl-zonebar-fill" style="width:${width}%;background:${color}"></div></div>
           <span class="tl-block-summary"><b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${lactateBadge}</span>
           <span class="tl-remove" data-action="remove" data-id="${b.id}">✕</span>
           <span class="tl-block-chevron">▸</span>
@@ -742,10 +754,6 @@
               <label>Duur (min)</label>
               <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
             </div>
-            <div class="tl-field">
-              <label>Hartslag</label>
-              <input type="number" inputmode="numeric" value="${b.hr}" data-field="hr" data-id="${b.id}">
-            </div>
             <div class="tl-field" style="flex:2;min-width:160px;">
               <label>Notitie</label>
               <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
@@ -763,12 +771,13 @@
         b[field] = (field==='note') ? e.target.value : (e.target.value===''? '' : Number(e.target.value));
         if(field==='power' || field==='duration_min'){
           renderOverview();
-          const summary = document.querySelector(`.tl-block[data-id="${id}"] .tl-block-summary`);
-          if(summary){
+          const blockEl = document.querySelector(`.tl-block[data-id="${id}"]`);
+          const summary = blockEl?.querySelector('.tl-block-summary');
+          if(blockEl && summary){
             const p2 = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
-            const c2 = zoneColor(p2), w2 = p2? Math.min(p2,150)/1.5 : 0;
-            const fill = document.querySelector(`.tl-block[data-id="${id}"] .tl-zonebar-fill`);
-            if(fill){ fill.style.width = w2+'%'; fill.style.background = c2; }
+            const c2 = zoneColor(p2), dark2 = isDarkIntensity(p2);
+            blockEl.style.background = c2;
+            blockEl.classList.toggle('tl-intensity-dark', dark2);
             const badge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
             summary.innerHTML = `<b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${badge}`;
           }
