@@ -624,30 +624,64 @@
     showBlocksCard();
   }
 
+  async function fetchPairedEventDescription(pairedEventId, activityDate){
+    try{
+      const d = new Date(activityDate+'T00:00:00');
+      const before = new Date(d); before.setDate(before.getDate()-2);
+      const after = new Date(d); after.setDate(after.getDate()+2);
+      const fmt = x => x.toISOString().slice(0,10);
+      const url = `https://intervals.icu/api/v1/athlete/${settings.athleteId}/events?oldest=${fmt(before)}&newest=${fmt(after)}`;
+      const res = await fetch(url, {headers:{Authorization: authHeader()}});
+      if(!res.ok) return null;
+      const events = await res.json();
+      const match = (events||[]).find(e => String(e.id)===String(pairedEventId));
+      return match ? (match.description || '') : null;
+    }catch(e){
+      return null;
+    }
+  }
+
   async function selectActivity(act){
     currentActivity = {id: String(act.id), name: act.name || act.type || 'Training', date: (act.start_date_local||'').slice(0,10) || todayStr(), pushable: true};
     $('blocksTitle').textContent = 'Blokken — ' + currentActivity.name;
     $('plannedNote').innerHTML = '';
+    let usedPaired = false;
     try{
-      const res = await fetch(`https://intervals.icu/api/v1/activity/${act.id}?intervals=true`, {headers:{Authorization: authHeader()}});
-      if(!res.ok) throw new Error('HTTP '+res.status);
-      const data = await res.json();
-      const ivs = (data.icu_intervals||[]).filter(iv => iv.type === 'WORK');
-      blocks = ivs.map(iv => ({
-        id: 'b'+Math.random().toString(36).slice(2),
-        duration_min: iv.moving_time ? Math.round((iv.moving_time/60)*10)/10 : '',
-        power: iv.average_watts ? Math.round(iv.average_watts) : '',
-        hr: iv.average_heartrate ? Math.round(iv.average_heartrate) : '',
-        lactate: '',
-        lactate_target: '',
-        note: ''
-      }));
-      expandedBlockId = null;
-      if(blocks.length===0) showToast('Geen automatisch gedetecteerde blokken — voeg ze handmatig toe');
-    }catch(e){
-      showToast('Kon blokken niet ophalen. Voeg ze handmatig toe.', true);
-      blocks = [];
+      if(act.paired_event_id){
+        const desc = await fetchPairedEventDescription(act.paired_event_id, currentActivity.date);
+        if(desc){
+          const plannedBlocks = parseWorkoutText(desc);
+          if(plannedBlocks.length>0){
+            blocks = plannedBlocks;
+            usedPaired = true;
+            $('plannedNote').innerHTML = '<p class="tl-hint">Blokken komen uit de gekoppelde geplande training (dezelfde structuur als tijdens de rit gepland stond), niet uit automatische detectie.</p>';
+          }
+        }
+      }
+    }catch(e){ /* val terug op automatische detectie */ }
+
+    if(!usedPaired){
+      try{
+        const res = await fetch(`https://intervals.icu/api/v1/activity/${act.id}?intervals=true`, {headers:{Authorization: authHeader()}});
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        const ivs = (data.icu_intervals||[]).filter(iv => iv.type === 'WORK');
+        blocks = ivs.map(iv => ({
+          id: 'b'+Math.random().toString(36).slice(2),
+          duration_min: iv.moving_time ? Math.round((iv.moving_time/60)*10)/10 : '',
+          power: iv.average_watts ? Math.round(iv.average_watts) : '',
+          hr: iv.average_heartrate ? Math.round(iv.average_heartrate) : '',
+          lactate: '',
+          lactate_target: '',
+          note: ''
+        }));
+        if(blocks.length===0) showToast('Geen gekoppelde training of gedetecteerde blokken — voeg ze handmatig toe');
+      }catch(e){
+        showToast('Kon blokken niet ophalen. Voeg ze handmatig toe.', true);
+        blocks = [];
+      }
     }
+    expandedBlockId = null;
     showBlocksCard();
   }
 
