@@ -361,22 +361,6 @@
     <p class="tl-hint">Per training met minimaal 2 blokken waarbij zowel vermogen als lactaat zijn ingevuld, wordt het vermogen bij de ingestelde lactaatwaarde geschat via lineaire interpolatie tussen de twee dichtstbijzijnde meetpunten. Trainingen waarbij die waarde buiten het gemeten bereik valt, tellen niet mee.</p>
   </div>
 
-  <div class="tl-card">
-    <h3>Trainingen vergelijken</h3>
-    <div class="tl-row">
-      <div class="tl-field">
-        <label>Training A</label>
-        <select id="compareA"><option value="">— kies —</option></select>
-      </div>
-      <div class="tl-field">
-        <label>Training B</label>
-        <select id="compareB"><option value="">— kies —</option></select>
-      </div>
-    </div>
-    <div id="compareChartWrap" style="margin-top:14px;"></div>
-    <p class="tl-hint">Vermogen tegen lactaat, per blok, voor twee trainingen naast elkaar. De stippellijn toont je ingestelde drempel-lactaat (zelfde waarde als hierboven). Handig om te zien of je bij hetzelfde vermogen nu een lagere lactaatwaarde hebt, of andersom.</p>
-  </div>
-
   </div>
 </div>
 
@@ -1023,99 +1007,9 @@
     `;
   }
 
-  let allLogs = [];
-
-  function getSeriesPoints(blocks){
-    return (blocks||[])
-      .filter(b => b.power!=='' && b.power!=null && b.lactate!=='' && b.lactate!=null)
-      .map(b => ({power:Number(b.power), lactate:Number(b.lactate)}))
-      .sort((a,b)=> a.power - b.power);
-  }
-
-  function populateCompareSelectors(items){
-    const selA = $('compareA'), selB = $('compareB');
-    const prevA = selA.value, prevB = selB.value;
-    const sorted = [...items].sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-    const optsHtml = '<option value="">— kies —</option>' + sorted.map(it =>
-      `<option value="${it.id}">${formatDateNL(it.date)}${it.name? ' – '+String(it.name).replace(/</g,'&lt;'):''}</option>`
-    ).join('');
-    selA.innerHTML = optsHtml;
-    selB.innerHTML = optsHtml;
-    if(sorted.some(it=>String(it.id)===prevA)) selA.value = prevA;
-    if(sorted.some(it=>String(it.id)===prevB)) selB.value = prevB;
-  }
-
-  function renderCompareChart(){
-    const wrap = $('compareChartWrap');
-    if(!wrap) return;
-    const idA = $('compareA').value, idB = $('compareB').value;
-    const logA = allLogs.find(l=> String(l.id)===idA);
-    const logB = allLogs.find(l=> String(l.id)===idB);
-    if(!logA || !logB){
-      wrap.innerHTML = '<p class="tl-empty">Kies twee trainingen om te vergelijken.</p>';
-      return;
-    }
-    const ptsA = getSeriesPoints(logA.blocks), ptsB = getSeriesPoints(logB.blocks);
-    if(ptsA.length<2 || ptsB.length<2){
-      wrap.innerHTML = '<p class="tl-empty">Beide trainingen hebben minimaal 2 blokken nodig met zowel vermogen als lactaat ingevuld.</p>';
-      return;
-    }
-
-    const W=680, H=240, padL=46, padR=16, padT=16, padB=30;
-    const plotW=W-padL-padR, plotH=H-padT-padB;
-    const allPts = ptsA.concat(ptsB);
-    let minPw = Math.min(...allPts.map(p=>p.power)), maxPw = Math.max(...allPts.map(p=>p.power));
-    let minLa = Math.min(0, ...allPts.map(p=>p.lactate)), maxLa = Math.max(...allPts.map(p=>p.lactate));
-    if(minPw===maxPw){ minPw-=10; maxPw+=10; }
-    if(minLa===maxLa){ maxLa+=1; }
-    const padPw = (maxPw-minPw)*0.08; minPw = Math.floor(minPw-padPw); maxPw = Math.ceil(maxPw+padPw);
-    const padLaTop = (maxLa-minLa)*0.12; maxLa = Math.ceil((maxLa+padLaTop)*10)/10;
-
-    const xPos = p => padL + (p-minPw)/(maxPw-minPw)*plotW;
-    const yPos = l => padT + plotH - (l-minLa)/(maxLa-minLa)*plotH;
-    const seriesPath = pts => pts.map((p,i)=> (i===0?'M':'L')+xPos(p.power).toFixed(1)+','+yPos(p.lactate).toFixed(1)).join(' ');
-    const seriesCircles = (pts, color, label) => pts.map(p =>
-      `<circle cx="${xPos(p.power).toFixed(1)}" cy="${yPos(p.lactate).toFixed(1)}" r="4" fill="${color}"><title>${label}: ${p.power}W – ${p.lactate} mmol/L</title></circle>`
-    ).join('');
-
-    const colorA = 'var(--accent)', colorB = '#E38A3D';
-    const target = Number($('thresholdTarget').value) || 4.0;
-    const thrA = estimateThresholdPower(logA.blocks, target);
-    const thrB = estimateThresholdPower(logB.blocks, target);
-    let thrLine = '';
-    if(target>=minLa && target<=maxLa){
-      const ty = yPos(target);
-      thrLine = `<line x1="${padL}" y1="${ty.toFixed(1)}" x2="${padL+plotW}" y2="${ty.toFixed(1)}" stroke="var(--text-faint)" stroke-dasharray="4,3" stroke-width="1"/><text x="${(padL+plotW).toFixed(1)}" y="${(ty-4).toFixed(1)}" text-anchor="end" font-size="9" fill="var(--text-faint)">${target} mmol/L</text>`;
-    }
-
-    wrap.innerHTML = `
-      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">
-        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="var(--border-light)" stroke-width="1"/>
-        <line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="var(--border-light)" stroke-width="1"/>
-        <text x="${padL-6}" y="${padT+4}" text-anchor="end" font-size="10" fill="var(--text-faint)">${maxLa.toFixed(1)}</text>
-        <text x="${padL-6}" y="${padT+plotH+4}" text-anchor="end" font-size="10" fill="var(--text-faint)">${minLa.toFixed(1)}</text>
-        <text x="${padL}" y="${H-8}" text-anchor="start" font-size="10" fill="var(--text-faint)">${minPw}W</text>
-        <text x="${padL+plotW}" y="${H-8}" text-anchor="end" font-size="10" fill="var(--text-faint)">${maxPw}W</text>
-        ${thrLine}
-        <path d="${seriesPath(ptsA)}" fill="none" stroke="${colorA}" stroke-width="2"/>
-        <path d="${seriesPath(ptsB)}" fill="none" stroke="${colorB}" stroke-width="2"/>
-        ${seriesCircles(ptsA, colorA, logA.name||'Training A')}
-        ${seriesCircles(ptsB, colorB, logB.name||'Training B')}
-      </svg>
-      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--text-dim);">
-        <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${colorA};margin-right:5px;"></i>${formatDateNL(logA.date)}${logA.name? ' – '+logA.name:''}${thrA!=null? ' · '+thrA+'W bij '+target+' mmol/L':''}</span>
-        <span><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${colorB};margin-right:5px;"></i>${formatDateNL(logB.date)}${logB.name? ' – '+logB.name:''}${thrB!=null? ' · '+thrB+'W bij '+target+' mmol/L':''}</span>
-      </div>
-      ${(thrA!=null && thrB!=null) ? `<div class="tl-hint" style="margin-top:6px;">Verschil bij ${target} mmol/L: <b style="color:var(--text);">${thrB-thrA>0?'+':''}${thrB-thrA}W</b></div>` : ''}
-    `;
-  }
-
   async function loadHistory(){
     const wrap = $('historyList');
     const items = await getAllLogs();
-    allLogs = items;
-    populateCompareSelectors(items);
-    renderCompareChart();
     if(items.length===0){
       wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
       renderThresholdChart(items);
@@ -1169,9 +1063,7 @@
   $('blockModalBackdrop').addEventListener('click', (e)=>{
     if(e.target.id==='blockModalBackdrop') closeBlockModal();
   });
-  $('thresholdTarget').addEventListener('input', ()=> { renderThresholdChart(); renderCompareChart(); });
-  $('compareA').addEventListener('change', renderCompareChart);
-  $('compareB').addEventListener('change', renderCompareChart);
+  $('thresholdTarget').addEventListener('input', ()=> renderThresholdChart());
 
   loadSettings();
   loadHistory();
