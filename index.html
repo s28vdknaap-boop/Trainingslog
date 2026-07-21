@@ -154,21 +154,8 @@
   margin-bottom:8px;
   transition:background .15s;
 }
-.tl-block.tl-intensity-dark{color:#fff;border-color:transparent;}
-.tl-block.tl-intensity-dark .tl-block-label{color:#fff;}
-.tl-block.tl-intensity-dark .tl-block-summary{color:rgba(255,255,255,.85);}
-.tl-block.tl-intensity-dark .tl-block-summary b{color:#fff;}
-.tl-block.tl-intensity-dark .tl-block-chevron{color:rgba(255,255,255,.7);}
-.tl-block.tl-intensity-dark .tl-remove{color:rgba(255,255,255,.6);}
-.tl-block.tl-intensity-dark .tl-remove:hover{color:#fff;}
-.tl-block.tl-intensity-dark .tl-field label{color:rgba(255,255,255,.8);}
-.tl-block.tl-intensity-dark .tl-field input{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4);color:#fff;}
-.tl-block.tl-intensity-dark .tl-field input::placeholder{color:rgba(255,255,255,.45);}
-.tl-block.tl-intensity-dark .tl-field input:focus{border-color:#fff;box-shadow:none;}
 .tl-block-top{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
 .tl-block-label{font-weight:600;font-size:12.5px;min-width:52px;color:var(--text-dim);}
-.tl-remove{cursor:pointer;color:var(--text-faint);font-size:17px;line-height:1;padding:2px 4px;}
-.tl-remove:hover{color:#B23B3B;}
 .tl-overview{
   display:flex;
   align-items:flex-end;
@@ -189,16 +176,33 @@
 .tl-overview-bar:hover{opacity:.7;}
 .tl-overview-bar.active{outline:2px solid var(--accent);outline-offset:1px;}
 
-.tl-block-header{
-  display:flex;align-items:center;gap:10px;cursor:pointer;padding:1px 0;
+.tl-modal-backdrop{
+  position:fixed;inset:0;background:rgba(20,22,25,.45);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;padding:20px;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom));
 }
-.tl-block-summary{flex:1;font-size:12.5px;color:var(--text-dim);}
-.tl-block-summary b{color:var(--text);}
-.tl-block-chevron{font-size:11px;color:var(--text-faint);transition:transform .15s;}
-.tl-block.open .tl-block-chevron{transform:rotate(90deg);}
-.tl-block-detail{display:none;margin-top:12px;}
-.tl-block.open .tl-block-detail{display:block;}
+.tl-modal{
+  background:var(--panel2);
+  border-radius:var(--radius);
+  padding:16px 16px 18px;
+  width:100%;max-width:400px;
+  max-height:85vh;overflow-y:auto;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);
+}
+.tl-modal.tl-intensity-dark{color:#fff;}
+.tl-modal.tl-intensity-dark .tl-block-label{color:#fff;}
+.tl-modal.tl-intensity-dark .tl-field label{color:rgba(255,255,255,.8);}
+.tl-modal.tl-intensity-dark .tl-field input{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.4);color:#fff;}
+.tl-modal.tl-intensity-dark .tl-field input::placeholder{color:rgba(255,255,255,.45);}
+.tl-modal.tl-intensity-dark .tl-hint{color:rgba(255,255,255,.7);}
+.tl-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.tl-modal-close{
+  background:none;border:1px solid currentColor;border-radius:var(--radius-pill,999px);
+  padding:6px 13px;font-size:12px;font-weight:600;cursor:pointer;color:inherit;
+}
 .tl-block-fields-lg{display:flex;gap:8px;margin-bottom:8px;}
+
 .tl-block-fields-lg .tl-field input{
   font-size:19px;font-weight:700;padding:11px;text-align:center;
 }
@@ -269,7 +273,7 @@
         </div>
         <div class="tl-field">
           <label>FTP (W, voor zonekleur)</label>
-          <input id="ftp" type="number" value="340">
+          <input id="ftp" type="number" placeholder="bv. 250">
         </div>
         <div class="tl-field">
           <label>WhatsApp nummer (optioneel)</label>
@@ -315,7 +319,7 @@
     <h3 id="blocksTitle">Blokken</h3>
     <div id="plannedNote"></div>
     <div id="blocksOverview" class="tl-overview"></div>
-    <div id="blocksList"></div>
+    <p class="tl-hint" style="margin-top:-8px;margin-bottom:12px;">Tik op een balk om dat blok te openen.</p>
     <div class="tl-actions">
       <button class="tl-btn tl-btn-ghost tl-btn-sm" id="addBlockBtn">+ Blok toevoegen</button>
       <button class="tl-btn tl-btn-sm" id="saveLogBtn">Log opslaan</button>
@@ -338,6 +342,10 @@
     </div>
   </div>
 
+  <div id="blockModalBackdrop" class="tl-modal-backdrop tl-hidden">
+    <div class="tl-modal" id="blockModal"></div>
+  </div>
+
   <div class="tl-card">
     <h3>Eerder opgeslagen</h3>
     <div id="historyList" class="tl-list"><p class="tl-empty">Nog niets opgeslagen.</p></div>
@@ -351,7 +359,7 @@
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  let settings = {apiKey:'', athleteId:'0', ftp:340, phone:''};
+  let settings = {apiKey:'', athleteId:'0', ftp:'', phone:''};
   let blocks = [];
   let currentActivity = null;
   let expandedBlockId = null;
@@ -435,13 +443,13 @@
     }catch(e){ /* geen instellingen opgeslagen, dat is prima */ }
     $('apiKey').value = settings.apiKey || '';
     $('athleteId').value = settings.athleteId || '0';
-    $('ftp').value = settings.ftp || 340;
+    $('ftp').value = settings.ftp || '';
     $('phone').value = settings.phone || '';
   }
   async function saveSettings(){
     settings.apiKey = $('apiKey').value.trim();
     settings.athleteId = $('athleteId').value.trim() || '0';
-    settings.ftp = Number($('ftp').value) || 340;
+    settings.ftp = Number($('ftp').value) || '';
     settings.phone = $('phone').value.trim();
     try{
       await storage.set('settings', JSON.stringify(settings));
@@ -655,101 +663,73 @@
   function addBlock(){
     const newId = 'b'+Math.random().toString(36).slice(2);
     blocks.push({id:newId, duration_min:5, power:'', hr:'', lactate:'', lactate_target:'', note:''});
-    expandedBlockId = newId;
-    renderBlocks();
+    renderOverview();
+    updateMessagePreview();
+    openBlockModal(newId);
   }
-  function removeBlock(id){
+  function removeBlockFromModal(id){
     blocks = blocks.filter(b=>b.id!==id);
-    if(expandedBlockId===id) expandedBlockId = null;
-    renderBlocks();
-  }
-
-  function toggleBlock(id){
-    expandedBlockId = (expandedBlockId === id) ? null : id;
-    renderBlocks();
-    if(expandedBlockId){
-      setTimeout(()=>{
-        const el = document.querySelector(`.tl-block[data-id="${expandedBlockId}"] input[data-field="power"]`);
-        if(el) el.focus();
-      }, 50);
-    }
+    closeBlockModal();
+    renderOverview();
+    updateMessagePreview();
   }
 
   function renderOverview(){
     const wrap = $('blocksOverview');
     if(blocks.length===0){ wrap.innerHTML=''; return; }
-    const totalDur = blocks.reduce((s,b)=> s + (Number(b.duration_min)||0.5), 0) || 1;
     wrap.innerHTML = blocks.map((b,i)=>{
       const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
       const color = zoneColor(pct);
       const heightPct = pct ? Math.max(Math.min(pct,150)/1.5, 12) : 12;
       const growWeight = Math.max(Number(b.duration_min)||0.5, 0.3);
-      const active = b.id===expandedBlockId ? ' active' : '';
-      return `<div class="tl-overview-bar${active}" data-id="${b.id}" title="Blok ${i+1} · ${fmtDuration(b.duration_min)} min${b.power? ' · '+b.power+'W':''}" style="flex-grow:${growWeight};height:${heightPct}%;background:${color};"></div>`;
+      return `<div class="tl-overview-bar" data-id="${b.id}" title="Blok ${i+1} · ${fmtDuration(b.duration_min)} min${b.power? ' · '+b.power+'W':''}" style="flex-grow:${growWeight};height:${heightPct}%;background:${color};"></div>`;
     }).join('');
     wrap.querySelectorAll('.tl-overview-bar').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        expandedBlockId = el.dataset.id;
-        renderBlocks();
-        document.querySelector(`.tl-block[data-id="${expandedBlockId}"]`)?.scrollIntoView({behavior:'smooth', block:'center'});
-        setTimeout(()=>{
-          const inp = document.querySelector(`.tl-block[data-id="${expandedBlockId}"] input[data-field="power"]`);
-          if(inp) inp.focus();
-        }, 200);
-      });
+      el.addEventListener('click', ()=> openBlockModal(el.dataset.id));
     });
   }
 
-  function renderBlocks(){
-    renderOverview();
-    const list = $('blocksList');
-    list.innerHTML = blocks.map((b,i)=>{
-      const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
-      const color = zoneColor(pct);
-      const dark = isDarkIntensity(pct);
-      const isOpen = b.id===expandedBlockId;
-      const lactateBadge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
-      return `
-      <div class="tl-block${isOpen?' open':''}${dark?' tl-intensity-dark':''}" data-id="${b.id}" style="background:${color};">
-        <div class="tl-block-header" data-action="toggle" data-id="${b.id}">
-          <span class="tl-block-label">Blok ${i+1}</span>
-          <span class="tl-block-summary"><b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${lactateBadge}</span>
-          <span class="tl-remove" data-action="remove" data-id="${b.id}">✕</span>
-          <span class="tl-block-chevron">▸</span>
+  function blockModalContent(b, i){
+    return `
+      <div class="tl-modal-header">
+        <span class="tl-block-label">Blok ${i+1}</span>
+        <button class="tl-modal-close" id="blockModalCloseBtn">✕ Verbergen</button>
+      </div>
+      <div class="tl-block-fields-lg">
+        <div class="tl-field">
+          <label>Vermogen (W)</label>
+          <input type="number" inputmode="numeric" value="${b.power}" data-field="power" data-id="${b.id}">
         </div>
-        <div class="tl-block-detail">
-          <div class="tl-block-fields-lg">
-            <div class="tl-field">
-              <label>Vermogen (W)</label>
-              <input type="number" inputmode="numeric" value="${b.power}" data-field="power" data-id="${b.id}">
-            </div>
-            <div class="tl-field lactate-field">
-              <label>Lactaat (mmol/L)</label>
-              <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
-            </div>
-          </div>
-          <div class="tl-actions" style="margin-top:0;margin-bottom:10px;">
-            <button class="tl-btn tl-btn-ghost tl-btn-sm" data-action="whatsapp-block" data-id="${b.id}">Appje sturen: dit blok</button>
-          </div>
-          <div class="tl-block-fields">
-            <div class="tl-field lactate-field" style="min-width:110px;">
-              <label>Doel-lactaat</label>
-              <input type="number" step="0.1" inputmode="decimal" value="${b.lactate_target}" data-field="lactate_target" data-id="${b.id}" placeholder="0.0">
-            </div>
-            <div class="tl-field">
-              <label>Duur (min)</label>
-              <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
-            </div>
-            <div class="tl-field" style="flex:2;min-width:160px;">
-              <label>Notitie</label>
-              <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
-            </div>
-          </div>
+        <div class="tl-field lactate-field">
+          <label>Lactaat (mmol/L)</label>
+          <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
         </div>
+      </div>
+      <div class="tl-actions" style="margin-top:0;margin-bottom:10px;">
+        <button class="tl-btn tl-btn-ghost tl-btn-sm" data-action="whatsapp-block" data-id="${b.id}">Appje sturen: dit blok</button>
+      </div>
+      <div class="tl-block-fields">
+        <div class="tl-field lactate-field" style="min-width:110px;">
+          <label>Doel-lactaat</label>
+          <input type="number" step="0.1" inputmode="decimal" value="${b.lactate_target}" data-field="lactate_target" data-id="${b.id}" placeholder="0.0">
+        </div>
+        <div class="tl-field">
+          <label>Duur (min)</label>
+          <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
+        </div>
+        <div class="tl-field" style="flex:2;min-width:160px;">
+          <label>Notitie</label>
+          <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
+        </div>
+      </div>
+      <div class="tl-actions">
+        <button class="tl-btn tl-btn-ghost tl-btn-sm" id="blockModalRemoveBtn" data-id="${b.id}">Verwijder dit blok</button>
       </div>`;
-    }).join('');
+  }
 
-    list.querySelectorAll('input').forEach(inp=>{
+  function wireBlockModal(){
+    const modal = $('blockModal');
+    modal.querySelectorAll('input').forEach(inp=>{
       inp.addEventListener('input', (e)=>{
         const id = e.target.dataset.id, field = e.target.dataset.field;
         const b = blocks.find(x=>x.id===id);
@@ -757,52 +737,62 @@
         b[field] = (field==='note') ? e.target.value : (e.target.value===''? '' : Number(e.target.value));
         if(field==='power' || field==='duration_min'){
           renderOverview();
-          const blockEl = document.querySelector(`.tl-block[data-id="${id}"]`);
-          const summary = blockEl?.querySelector('.tl-block-summary');
-          if(blockEl && summary){
-            const p2 = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
-            const c2 = zoneColor(p2), dark2 = isDarkIntensity(p2);
-            blockEl.style.background = c2;
-            blockEl.classList.toggle('tl-intensity-dark', dark2);
-            const badge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
-            summary.innerHTML = `<b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${badge}`;
-          }
-        }
-        if(field==='lactate'){
-          const summary = document.querySelector(`.tl-block[data-id="${id}"] .tl-block-summary`);
-          if(summary){
-            const badge = (b.lactate!=='' && b.lactate!=null) ? ` · 🩸 ${b.lactate}` : '';
-            summary.innerHTML = `<b>${fmtDuration(b.duration_min)}</b> min${b.power? ' · '+b.power+'W':''}${badge}`;
-          }
+          const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
+          modal.style.background = zoneColor(pct);
+          modal.classList.toggle('tl-intensity-dark', isDarkIntensity(pct));
         }
         updateMessagePreview();
       });
     });
-    list.querySelectorAll('[data-action="remove"]').forEach(el=>{
-      el.addEventListener('click', (e)=>{ e.stopPropagation(); removeBlock(e.target.dataset.id); });
+    $('blockModalCloseBtn').addEventListener('click', closeBlockModal);
+    $('blockModalRemoveBtn').addEventListener('click', (e)=> removeBlockFromModal(e.target.dataset.id));
+    modal.querySelectorAll('[data-action="whatsapp-block"]').forEach(el=>{
+      el.addEventListener('click', ()=> sendBlockWhatsapp(el.dataset.id));
     });
-    list.querySelectorAll('[data-action="whatsapp-block"]').forEach(el=>{
-      el.addEventListener('click', (e)=>{ e.stopPropagation(); sendBlockWhatsapp(el.dataset.id); });
-    });
-    list.querySelectorAll('[data-action="toggle"]').forEach(el=>{
-      el.addEventListener('click', (e)=>{
-        if(e.target.dataset.action==='remove') return;
-        toggleBlock(el.dataset.id);
-      });
-    });
+  }
+
+  function openBlockModal(id){
+    const i = blocks.findIndex(x=>x.id===id);
+    if(i===-1) return;
+    expandedBlockId = id;
+    const b = blocks[i];
+    const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
+    const modal = $('blockModal');
+    modal.style.background = zoneColor(pct);
+    modal.classList.toggle('tl-intensity-dark', isDarkIntensity(pct));
+    modal.innerHTML = blockModalContent(b, i);
+    wireBlockModal();
+    $('blockModalBackdrop').classList.remove('tl-hidden');
+    setTimeout(()=>{
+      const inp = modal.querySelector('input[data-field="power"]');
+      if(inp) inp.focus();
+    }, 50);
+  }
+
+  function closeBlockModal(){
+    expandedBlockId = null;
+    $('blockModalBackdrop').classList.add('tl-hidden');
+  }
+
+  function renderBlocks(){
+    renderOverview();
     updateMessagePreview();
   }
 
   function hasBlockData(b){
     return (b.lactate!=='' && b.lactate!=null) || (b.lactate_target!=='' && b.lactate_target!=null) || (b.note && b.note.trim()!=='');
   }
-  function formatBlockLine(b, i){
-    let parts = [`Blok ${i+1}`];
+  function formatBlockValues(b){
+    let parts = [];
     if(b.power!=='' && b.power!=null) parts.push(`${b.power}W`);
     if(b.lactate!=='' && b.lactate!=null) parts.push(`${b.lactate} mmol/L`);
     if(b.lactate_target!=='' && b.lactate_target!=null) parts.push(`doel ${b.lactate_target} mmol/L`);
-    if(b.note && b.note.trim()!=='') parts.push(b.note.trim());
     return parts.join(' - ');
+  }
+  function formatBlockLine(b, i){
+    let line = `Blok ${i+1} - ${formatBlockValues(b)}`;
+    if(b.note && b.note.trim()!=='') line += ' - ' + b.note.trim();
+    return line;
   }
   function generateMessage(){
     if(!currentActivity) return '';
@@ -829,11 +819,9 @@
   }
 
   function sendBlockWhatsapp(id){
-    const i = blocks.findIndex(x=>x.id===id);
-    if(i===-1) return;
-    const b = blocks[i];
-    const header = `🚴 ${formatDateNL(currentActivity?.date)}${currentActivity?.name ? ' – '+currentActivity.name : ''}`;
-    openWhatsapp(header + '\n' + formatBlockLine(b, i));
+    const b = blocks.find(x=>x.id===id);
+    if(!b) return;
+    openWhatsapp(formatBlockValues(b));
   }
 
   function sendWhatsapp(){
@@ -980,6 +968,9 @@
     const body = $('settingsBody');
     const hidden = body.classList.toggle('tl-hidden');
     $('settingsToggle').textContent = hidden ? 'tonen' : 'verbergen';
+  });
+  $('blockModalBackdrop').addEventListener('click', (e)=>{
+    if(e.target.id==='blockModalBackdrop') closeBlockModal();
   });
 
   loadSettings();
