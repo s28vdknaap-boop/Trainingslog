@@ -2,61 +2,77 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
 
 :root{
-  --bg:#14171A;
-  --panel:#1B1F23;
-  --panel2:#20252A;
-  --border:#2B3238;
-  --border-light:#333B42;
-  --text:#E8EBEE;
-  --text-dim:#8B939B;
-  --text-faint:#5B6369;
-  --power:#4C8DFF;
-  --lactate:#FF6B3D;
-  --good:#3ECF8E;
-  --warn:#FFB020;
-  --bad:#E23B3B;
-  --radius:10px;
+  --ink:#0A0A0A;
+  --bg:#FFFFFF;
+  --panel:#FFFFFF;
+  --panel2:#F4F4F4;
+  --border:#E2E2E2;
+  --border-light:#C9C9C9;
+  --text:#0A0A0A;
+  --text-dim:#666666;
+  --text-faint:#9A9A9A;
+  --cream:#FFFFFF;
+  --radius:2px;
+  --radius-pill:999px;
 }
 *{box-sizing:border-box;}
 .tl-app{
   background:var(--bg);
   color:var(--text);
   font-family:'Inter',system-ui,sans-serif;
-  padding:20px;
-  border-radius:16px;
   max-width:920px;
   margin:0 auto;
+  padding-bottom:32px;
 }
+.tl-topbar{
+  background:var(--ink);
+  color:var(--cream);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  text-align:center;
+  padding:8px 12px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.tl-hero{padding:26px 20px 6px;}
 .tl-eyebrow{
   font-family:'IBM Plex Mono',monospace;
   font-size:11px;
-  letter-spacing:.14em;
+  letter-spacing:.16em;
   text-transform:uppercase;
   color:var(--text-faint);
-  margin:0 0 4px 0;
+  margin:0 0 8px 0;
 }
 .tl-title{
   font-family:'Space Grotesk',sans-serif;
   font-weight:700;
-  font-size:26px;
-  margin:0 0 18px 0;
-  display:flex;
-  align-items:center;
-  gap:10px;
+  font-size:34px;
+  line-height:1.02;
+  letter-spacing:-.01em;
+  text-transform:uppercase;
+  margin:0 0 6px 0;
 }
-.tl-title .dot-power{color:var(--power);}
-.tl-title .dot-lactate{color:var(--lactate);}
+.tl-title .dot-power{color:var(--ink);}
+.tl-title .dot-lactate{color:var(--text-faint);}
+.tl-sub{font-size:13px;color:var(--text-dim);margin:0 0 20px 0;max-width:48ch;}
+.tl-body{padding:0 20px;}
 .tl-card{
   background:var(--panel);
   border:1px solid var(--border);
   border-radius:var(--radius);
-  padding:16px 18px;
+  padding:18px 18px;
   margin-bottom:14px;
 }
 .tl-card h3{
   font-family:'Space Grotesk',sans-serif;
-  font-size:14px;
-  margin:0 0 12px 0;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:.03em;
+  text-transform:uppercase;
+  margin:0 0 14px 0;
   color:var(--text);
   display:flex;
   align-items:center;
@@ -67,125 +83,153 @@
   color:var(--text-dim);
   cursor:pointer;
   font-weight:500;
+  text-transform:none;
+  letter-spacing:normal;
   font-family:'Inter',sans-serif;
 }
 .tl-row{display:flex;gap:10px;flex-wrap:wrap;}
 .tl-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px;}
-.tl-field label{font-size:11px;color:var(--text-dim);font-weight:500;}
+.tl-field label{font-size:10.5px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
 .tl-field input, .tl-field select{
   background:var(--panel2);
   border:1px solid var(--border-light);
   color:var(--text);
-  border-radius:7px;
-  padding:8px 10px;
-  font-size:13px;
+  border-radius:var(--radius);
+  padding:10px 11px;
+  font-size:15px;
   font-family:'IBM Plex Mono',monospace;
   outline:none;
+  -webkit-appearance:none;
 }
-.tl-field input:focus, .tl-field select:focus{border-color:var(--power);}
+.tl-field input:focus, .tl-field select:focus{border-color:var(--ink);}
 .tl-field input::placeholder{color:var(--text-faint);font-family:'Inter',sans-serif;}
 .tl-btn{
-  background:var(--power);
-  color:#0A0F14;
+  background:var(--ink);
+  color:var(--cream);
   border:none;
-  border-radius:7px;
-  padding:9px 16px;
-  font-weight:600;
-  font-size:13px;
+  border-radius:var(--radius-pill);
+  padding:11px 20px;
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:.06em;
+  text-transform:uppercase;
   cursor:pointer;
-  font-family:'Inter',sans-serif;
+  font-family:'Space Grotesk',sans-serif;
 }
-.tl-btn:hover{filter:brightness(1.1);}
-.tl-btn:disabled{opacity:.5;cursor:default;}
+.tl-btn:hover{filter:brightness(1.25);}
+.tl-btn:disabled{opacity:.4;cursor:default;}
 .tl-btn-ghost{
   background:transparent;
-  color:var(--text-dim);
-  border:1px solid var(--border-light);
+  color:var(--ink);
+  border:1.5px solid var(--ink);
 }
-.tl-btn-ghost:hover{color:var(--text);border-color:var(--text-dim);}
-.tl-btn-lactate{background:var(--lactate);color:#1a0d05;}
-.tl-btn-sm{padding:6px 11px;font-size:12px;}
+.tl-btn-ghost:hover{background:var(--ink);color:var(--cream);filter:none;}
+.tl-btn-lactate{background:var(--text-dim);color:#fff;}
+.tl-btn-sm{padding:8px 14px;font-size:11px;}
 .tl-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
-.tl-hint{font-size:12px;color:var(--text-faint);margin-top:8px;line-height:1.5;}
+.tl-hint{font-size:12px;color:var(--text-faint);margin-top:8px;line-height:1.55;}
 .tl-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
 .tl-list-item{
   background:var(--panel2);
   border:1px solid var(--border);
-  border-radius:8px;
-  padding:9px 12px;
+  border-radius:var(--radius);
+  padding:11px 13px;
   cursor:pointer;
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:10px;
 }
-.tl-list-item:hover{border-color:var(--power);}
-.tl-list-item .name{font-weight:600;font-size:13px;}
+.tl-list-item:hover{border-color:var(--ink);}
+.tl-list-item .name{font-weight:700;font-size:13px;font-family:'Space Grotesk',sans-serif;}
 .tl-list-item .meta{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
 .tl-empty{color:var(--text-faint);font-size:12.5px;padding:8px 2px;}
 .tl-error{
-  background:rgba(226,59,59,.1);
-  border:1px solid rgba(226,59,59,.35);
-  color:#ff8a8a;
-  border-radius:8px;
+  background:var(--panel2);
+  border:1.5px solid var(--ink);
+  color:var(--ink);
+  border-radius:var(--radius);
   padding:10px 12px;
   font-size:12.5px;
   margin-top:10px;
 }
 .tl-toast{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  background:var(--panel2);border:1px solid var(--border-light);
-  color:var(--text);padding:10px 16px;border-radius:8px;font-size:13px;
-  z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;
+  position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  background:var(--ink);border:1px solid var(--ink);
+  color:var(--cream);padding:11px 18px;border-radius:var(--radius-pill);font-size:13px;
+  font-family:'Space Grotesk',sans-serif;font-weight:600;
+  z-index:999;box-shadow:0 8px 24px rgba(0,0,0,.25);opacity:0;transition:opacity .2s;
   pointer-events:none;
+  max-width:calc(100vw - 40px);
 }
 .tl-toast.show{opacity:1;}
-.tl-toast.err{border-color:var(--bad);color:#ff8a8a;}
+.tl-toast.err{background:#fff;color:var(--ink);border:1.5px solid var(--ink);}
 
 .tl-block{
   background:var(--panel2);
   border:1px solid var(--border);
-  border-radius:8px;
-  padding:10px 12px;
+  border-radius:var(--radius);
+  padding:12px 13px;
   margin-bottom:8px;
 }
-.tl-block-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
-.tl-block-label{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;min-width:56px;}
-.tl-zonebar{flex:1;height:6px;background:#0F1215;border-radius:4px;overflow:hidden;position:relative;}
+.tl-block-top{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.tl-block-label{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:12px;min-width:56px;text-transform:uppercase;letter-spacing:.03em;}
+.tl-zonebar{flex:1;height:5px;background:var(--border);border-radius:4px;overflow:hidden;position:relative;}
 .tl-zonebar-fill{height:100%;border-radius:4px;transition:width .2s;}
-.tl-remove{cursor:pointer;color:var(--text-faint);font-size:16px;line-height:1;padding:2px 4px;}
-.tl-remove:hover{color:var(--bad);}
+.tl-remove{cursor:pointer;color:var(--text-faint);font-size:17px;line-height:1;padding:2px 4px;}
+.tl-remove:hover{color:var(--ink);}
 .tl-block-fields{display:flex;gap:8px;flex-wrap:wrap;}
 .tl-block-fields .tl-field{min-width:90px;}
-.tl-block-fields .tl-field.lactate-field input{border-color:rgba(255,107,61,.4);}
-.tl-block-fields .tl-field.lactate-field label{color:var(--lactate);}
+.tl-block-fields .tl-field.lactate-field label{color:var(--ink);}
+.tl-block-fields .tl-field.lactate-field input{border-width:1.5px;border-color:var(--ink);}
 
 .tl-textarea{
   width:100%;
   background:var(--panel2);
   border:1px solid var(--border-light);
   color:var(--text);
-  border-radius:8px;
-  padding:10px 12px;
+  border-radius:var(--radius);
+  padding:11px 12px;
   font-family:'IBM Plex Mono',monospace;
-  font-size:12.5px;
+  font-size:13px;
   line-height:1.6;
   min-height:120px;
   resize:vertical;
 }
-.tl-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text-dim);}
+.tl-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);}
 .tl-legend span{display:inline-flex;align-items:center;gap:5px;}
 .tl-legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
 .tl-hidden{display:none !important;}
 @media(max-width:520px){
   .tl-block-fields .tl-field{min-width:80px;}
-  .tl-title{font-size:21px;}
+  .tl-title{font-size:26px;}
+  .tl-hero{padding:20px 16px 4px;}
+  .tl-body{padding:0 16px;}
 }
 </style>
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Lactaatlog — Vermogen &amp; Lactaat</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lactaatlog">
+</head>
+<body>
 
 <div class="tl-app">
-  <p class="tl-eyebrow">Trainingsregistratie</p>
-  <h1 class="tl-title"><span class="dot-power">●</span><span class="dot-lactate">●</span> Vermogen &amp; Lactaat Log</h1>
+  <div class="tl-topbar">Vermogen &amp; Lactaat Registratie · Gekoppeld met Intervals.icu</div>
+
+  <div class="tl-hero">
+    <p class="tl-eyebrow">Trainingslog</p>
+    <h1 class="tl-title"><span class="dot-power">●</span><span class="dot-lactate">●</span> Vermogen &amp; Lactaat Log</h1>
+    <p class="tl-sub">Blokken uit je schema. Lactaat erbij. Direct naar Intervals.icu.</p>
+  </div>
+
+  <div class="tl-body">
 
   <div class="tl-card">
     <h3>Instellingen <span class="tl-toggle" id="settingsToggle">verbergen</span></h3>
@@ -252,11 +296,11 @@
       <button class="tl-btn tl-btn-sm" id="saveLogBtn">Log opslaan</button>
     </div>
     <div class="tl-legend">
-      <span><i style="background:#4C8DFF"></i>Z1-2</span>
-      <span><i style="background:#3ECF8E"></i>Z3</span>
-      <span><i style="background:#FFB020"></i>Z4</span>
-      <span><i style="background:#FF6B3D"></i>Z5</span>
-      <span><i style="background:#E23B3B"></i>Z6+</span>
+      <span><i style="background:#C9C9C9"></i>Z1-2</span>
+      <span><i style="background:#707070"></i>Z3</span>
+      <span><i style="background:#454545"></i>Z4</span>
+      <span><i style="background:#1F1F1F"></i>Z5</span>
+      <span><i style="background:#0A0A0A"></i>Z6+</span>
     </div>
 
     <h3 style="margin-top:18px;">Samenvatting</h3>
@@ -271,6 +315,8 @@
   <div class="tl-card">
     <h3>Eerder opgeslagen</h3>
     <div id="historyList" class="tl-list"><p class="tl-empty">Nog niets opgeslagen.</p></div>
+  </div>
+
   </div>
 </div>
 
@@ -343,13 +389,13 @@
     setTimeout(()=>{t.className='tl-toast';}, 3200);
   }
   function zoneColor(pct){
-    if(pct==null||pct==='') return '#3A4148';
-    if(pct<56) return '#4C8DFF';
-    if(pct<76) return '#4C8DFF';
-    if(pct<91) return '#3ECF8E';
-    if(pct<106) return '#FFB020';
-    if(pct<121) return '#FF6B3D';
-    return '#E23B3B';
+    if(pct==null||pct==='') return '#E2E2E2';
+    if(pct<56) return '#C9C9C9';
+    if(pct<76) return '#9A9A9A';
+    if(pct<91) return '#707070';
+    if(pct<106) return '#454545';
+    if(pct<121) return '#1F1F1F';
+    return '#0A0A0A';
   }
 
   async function loadSettings(){
@@ -766,7 +812,7 @@
         <div class="tl-list-item" data-key="log:${it.id}">
           <div>
             <div class="name">${(it.name||'Training').replace(/</g,'&lt;')}</div>
-            <div class="meta">${it.date||''} · ${(it.blocks||[]).length} blokken${it.syncedToIntervals ? ' · <span style="color:var(--good)">✓ Intervals.icu</span>' : ''}</div>
+            <div class="meta">${it.date||''} · ${(it.blocks||[]).length} blokken${it.syncedToIntervals ? ' · <span style="color:var(--ink);font-weight:700;">✓ Intervals.icu</span>' : ''}</div>
           </div>
           <div class="meta">bekijk</div>
         </div>
@@ -812,3 +858,5 @@
   loadHistory();
 })();
 </script>
+</body>
+</html>
