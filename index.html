@@ -275,10 +275,6 @@
           <label>FTP (W, voor zonekleur)</label>
           <input id="ftp" type="number" placeholder="bv. 250">
         </div>
-        <div class="tl-field">
-          <label>WhatsApp nummer (optioneel)</label>
-          <input id="phone" type="text" placeholder="31612345678, leeg = kiezen bij versturen">
-        </div>
       </div>
       <div class="tl-actions">
         <button class="tl-btn" id="saveSettingsBtn">Instellingen opslaan</button>
@@ -359,7 +355,7 @@
 <script>
 (function(){
   const $ = id => document.getElementById(id);
-  let settings = {apiKey:'', athleteId:'0', ftp:'', phone:''};
+  let settings = {apiKey:'', athleteId:'0', ftp:''};
   let blocks = [];
   let currentActivity = null;
   let expandedBlockId = null;
@@ -444,13 +440,11 @@
     $('apiKey').value = settings.apiKey || '';
     $('athleteId').value = settings.athleteId || '0';
     $('ftp').value = settings.ftp || '';
-    $('phone').value = settings.phone || '';
   }
   async function saveSettings(){
     settings.apiKey = $('apiKey').value.trim();
     settings.athleteId = $('athleteId').value.trim() || '0';
     settings.ftp = Number($('ftp').value) || '';
-    settings.phone = $('phone').value.trim();
     try{
       await storage.set('settings', JSON.stringify(settings));
       showToast('Instellingen opgeslagen');
@@ -813,9 +807,7 @@
 
   function openWhatsapp(text){
     const encoded = encodeURIComponent(text);
-    const phone = (settings.phone||'').replace(/[^0-9]/g,'');
-    const url = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
-    window.open(url, '_blank');
+    window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
   }
 
   function sendBlockWhatsapp(id){
