@@ -707,6 +707,7 @@
     blocks.push({id:newId, duration_min:5, power:'', hr:'', lactate:'', lactate_target:'', note:''});
     renderOverview();
     updateMessagePreview();
+    scheduleDraftSave();
     openBlockModal(newId);
   }
   function removeBlockFromModal(id){
@@ -766,7 +767,8 @@
       </div>
       <div class="tl-actions">
         <button class="tl-btn tl-btn-sm" id="blockModalCloseBtn">Opslaan</button>
-      </div>`;
+      </div>
+      <p class="tl-hint" style="margin-top:8px;">Wijzigingen worden automatisch bewaard, ook als je de pop-up sluit zonder op Opslaan te tikken.</p>`;
   }
 
   function wireBlockModal(){
@@ -784,10 +786,11 @@
           modal.classList.toggle('tl-intensity-dark', isDarkIntensity(pct));
         }
         updateMessagePreview();
+        scheduleDraftSave();
       });
     });
     $('blockModalCloseBtn').addEventListener('click', closeBlockModal);
-    $('blockModalRemoveBtn').addEventListener('click', (e)=> removeBlockFromModal(e.target.dataset.id));
+    $('blockModalRemoveBtn').addEventListener('click', (e)=> { removeBlockFromModal(e.target.dataset.id); scheduleDraftSave(); });
     modal.querySelectorAll('[data-action="whatsapp-block"]').forEach(el=>{
       el.addEventListener('click', ()=> sendBlockWhatsapp(el.dataset.id));
     });
@@ -934,17 +937,24 @@
     }
   }
 
-  async function saveLog(synced){
+  async function saveLog(synced, silent){
     if(!currentActivity) return;
     const key = `log:${currentActivity.id}`;
     const payload = Object.assign({}, currentActivity, {blocks, savedAt: new Date().toISOString(), syncedToIntervals: !!synced});
     try{
       await storage.set(key, JSON.stringify(payload));
-      if(!synced) showToast('Log lokaal opgeslagen');
+      if(!synced && !silent) showToast('Log lokaal opgeslagen');
       loadHistory();
     }catch(e){
-      showToast('Opslaan mislukt', true);
+      if(!silent) showToast('Opslaan mislukt', true);
     }
+  }
+
+  let draftSaveTimer = null;
+  function scheduleDraftSave(){
+    if(!currentActivity) return;
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(()=>{ saveLog(false, true); }, 600);
   }
 
   async function getAllLogs(){
