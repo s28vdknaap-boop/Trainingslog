@@ -728,6 +728,9 @@
               <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
             </div>
           </div>
+          <div class="tl-actions" style="margin-top:0;margin-bottom:10px;">
+            <button class="tl-btn tl-btn-ghost tl-btn-sm" data-action="whatsapp-block" data-id="${b.id}">Appje sturen: dit blok</button>
+          </div>
           <div class="tl-block-fields">
             <div class="tl-field lactate-field" style="min-width:110px;">
               <label>Doel-lactaat</label>
@@ -778,6 +781,9 @@
     list.querySelectorAll('[data-action="remove"]').forEach(el=>{
       el.addEventListener('click', (e)=>{ e.stopPropagation(); removeBlock(e.target.dataset.id); });
     });
+    list.querySelectorAll('[data-action="whatsapp-block"]').forEach(el=>{
+      el.addEventListener('click', (e)=>{ e.stopPropagation(); sendBlockWhatsapp(el.dataset.id); });
+    });
     list.querySelectorAll('[data-action="toggle"]').forEach(el=>{
       el.addEventListener('click', (e)=>{
         if(e.target.dataset.action==='remove') return;
@@ -787,18 +793,21 @@
     updateMessagePreview();
   }
 
+  function formatBlockLine(b, i){
+    let parts = [`Blok ${i+1}: ${fmtDuration(b.duration_min)} min`];
+    if(b.power!=='' && b.power!=null) parts.push(`@ ${b.power}W`);
+    if(b.hr!=='' && b.hr!=null) parts.push(`(HF ${b.hr})`);
+    let line = parts.join(' ');
+    if(b.lactate_target!=='' && b.lactate_target!=null) line += ` – doel ${b.lactate_target} mmol/L`;
+    if(b.lactate!=='' && b.lactate!=null) line += ` – Lactaat ${b.lactate} mmol/L`;
+    if(b.note) line += ` — ${b.note}`;
+    return line;
+  }
   function generateMessage(){
     if(!currentActivity) return '';
     let lines = [`🚴 Training ${formatDateNL(currentActivity.date)}${currentActivity.name ? ' – '+currentActivity.name : ''}`, ''];
     blocks.forEach((b,i)=>{
-      let parts = [`Blok ${i+1}: ${fmtDuration(b.duration_min)} min`];
-      if(b.power!=='' && b.power!=null) parts.push(`@ ${b.power}W`);
-      if(b.hr!=='' && b.hr!=null) parts.push(`(HF ${b.hr})`);
-      let line = parts.join(' ');
-      if(b.lactate_target!=='' && b.lactate_target!=null) line += ` – doel ${b.lactate_target} mmol/L`;
-      if(b.lactate!=='' && b.lactate!=null) line += ` – Lactaat ${b.lactate} mmol/L`;
-      if(b.note) line += ` — ${b.note}`;
-      lines.push(line);
+      lines.push(formatBlockLine(b,i));
     });
     return lines.join('\n');
   }
@@ -806,11 +815,23 @@
     $('messagePreview').value = generateMessage();
   }
 
-  function sendWhatsapp(){
-    const text = encodeURIComponent($('messagePreview').value);
+  function openWhatsapp(text){
+    const encoded = encodeURIComponent(text);
     const phone = (settings.phone||'').replace(/[^0-9]/g,'');
-    const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://api.whatsapp.com/send?text=${text}`;
+    const url = phone ? `https://wa.me/${phone}?text=${encoded}` : `https://api.whatsapp.com/send?text=${encoded}`;
     window.open(url, '_blank');
+  }
+
+  function sendBlockWhatsapp(id){
+    const i = blocks.findIndex(x=>x.id===id);
+    if(i===-1) return;
+    const b = blocks[i];
+    const header = `🚴 ${formatDateNL(currentActivity?.date)}${currentActivity?.name ? ' – '+currentActivity.name : ''}`;
+    openWhatsapp(header + '\n' + formatBlockLine(b, i));
+  }
+
+  function sendWhatsapp(){
+    openWhatsapp($('messagePreview').value);
   }
 
   const LACTATE_MARK_START = '--- Lactaatlog (via Trainingslog-app) ---';
