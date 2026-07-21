@@ -793,22 +793,28 @@
     updateMessagePreview();
   }
 
+  function hasBlockData(b){
+    return (b.lactate!=='' && b.lactate!=null) || (b.lactate_target!=='' && b.lactate_target!=null) || (b.note && b.note.trim()!=='');
+  }
   function formatBlockLine(b, i){
-    let parts = [`Blok ${i+1}: ${fmtDuration(b.duration_min)} min`];
-    if(b.power!=='' && b.power!=null) parts.push(`@ ${b.power}W`);
-    if(b.hr!=='' && b.hr!=null) parts.push(`(HF ${b.hr})`);
-    let line = parts.join(' ');
-    if(b.lactate_target!=='' && b.lactate_target!=null) line += ` – doel ${b.lactate_target} mmol/L`;
-    if(b.lactate!=='' && b.lactate!=null) line += ` – Lactaat ${b.lactate} mmol/L`;
-    if(b.note) line += ` — ${b.note}`;
-    return line;
+    let parts = [`Blok ${i+1}`];
+    if(b.power!=='' && b.power!=null) parts.push(`${b.power}W`);
+    if(b.lactate!=='' && b.lactate!=null) parts.push(`${b.lactate} mmol/L`);
+    if(b.lactate_target!=='' && b.lactate_target!=null) parts.push(`doel ${b.lactate_target} mmol/L`);
+    if(b.note && b.note.trim()!=='') parts.push(b.note.trim());
+    return parts.join(' - ');
   }
   function generateMessage(){
     if(!currentActivity) return '';
     let lines = [`🚴 Training ${formatDateNL(currentActivity.date)}${currentActivity.name ? ' – '+currentActivity.name : ''}`, ''];
-    blocks.forEach((b,i)=>{
-      lines.push(formatBlockLine(b,i));
-    });
+    const filled = blocks.filter(hasBlockData);
+    if(filled.length===0){
+      lines.push('(nog geen blokken ingevuld)');
+    } else {
+      blocks.forEach((b,i)=>{
+        if(hasBlockData(b)) lines.push(formatBlockLine(b,i));
+      });
+    }
     return lines.join('\n');
   }
   function updateMessagePreview(){
