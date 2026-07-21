@@ -339,11 +339,12 @@
       <button class="tl-btn tl-btn-sm" id="saveLogBtn">Log opslaan</button>
     </div>
     <div class="tl-legend">
-      <span><i style="background:#C9C9C9"></i>Z1-2</span>
-      <span><i style="background:#707070"></i>Z3</span>
-      <span><i style="background:#454545"></i>Z4</span>
-      <span><i style="background:#1F1F1F"></i>Z5</span>
-      <span><i style="background:#0A0A0A"></i>Z6+</span>
+      <span><i style="background:#9BD8A8"></i>Z1-2</span>
+      <span><i style="background:#82CBB6"></i>Z3</span>
+      <span><i style="background:#7FBBD9"></i>Z4</span>
+      <span><i style="background:#8FA4E3"></i>Z5</span>
+      <span><i style="background:#AC8FDD"></i>Z6</span>
+      <span><i style="background:#C382D6"></i>Z7+</span>
     </div>
 
     <h3 style="margin-top:18px;">Samenvatting</h3>
@@ -434,15 +435,15 @@
   }
   function zoneColor(pct){
     if(pct==null||pct==='') return '#E2E2E2';
-    if(pct<56) return '#C9C9C9';
-    if(pct<76) return '#9A9A9A';
-    if(pct<91) return '#707070';
-    if(pct<106) return '#454545';
-    if(pct<121) return '#1F1F1F';
-    return '#0A0A0A';
+    if(pct<56) return '#9BD8A8';
+    if(pct<76) return '#82CBB6';
+    if(pct<91) return '#7FBBD9';
+    if(pct<106) return '#8FA4E3';
+    if(pct<121) return '#AC8FDD';
+    return '#C382D6';
   }
   function isDarkIntensity(pct){
-    return pct!=null && pct>=76;
+    return false;
   }
 
   async function loadSettings(){
