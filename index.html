@@ -287,7 +287,6 @@
     <h3>Training ophalen</h3>
     <div class="tl-actions">
       <button class="tl-btn" id="fetchPlannedBtn">Geplande week ophalen</button>
-      <button class="tl-btn tl-btn-ghost" id="manualBtn">Handmatig invoeren</button>
     </div>
     <p class="tl-hint">Haalt de door je trainer(s) klaargezette trainingen op voor de komende 7 dagen, en zet de blokken (duur + doelvermogen) automatisch klaar.</p>
 
@@ -309,6 +308,9 @@
       <div class="tl-list" id="activityList"></div>
     </div>
     <div id="fetchError"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <button class="tl-btn tl-btn-ghost tl-btn-sm" id="manualBtn">Handmatig invoeren</button>
+    </div>
   </div>
 
   <div class="tl-card tl-hidden" id="blocksCard">
@@ -345,6 +347,18 @@
   <div class="tl-card">
     <h3>Eerder opgeslagen</h3>
     <div id="historyList" class="tl-list"><p class="tl-empty">Nog niets opgeslagen.</p></div>
+  </div>
+
+  <div class="tl-card">
+    <h3>Lactaatdrempel over tijd</h3>
+    <div class="tl-row">
+      <div class="tl-field" style="max-width:170px;">
+        <label>Drempel-lactaat (mmol/L)</label>
+        <input id="thresholdTarget" type="number" step="0.1" value="4.0">
+      </div>
+    </div>
+    <div id="thresholdChartWrap" style="margin-top:14px;"></div>
+    <p class="tl-hint">Per training met minimaal 2 blokken waarbij zowel vermogen als lactaat zijn ingevuld, wordt het vermogen bij de ingestelde lactaatwaarde geschat via lineaire interpolatie tussen de twee dichtstbijzijnde meetpunten. Trainingen waarbij die waarde buiten het gemeten bereik valt, tellen niet mee.</p>
   </div>
 
   </div>
@@ -899,14 +913,10 @@
     }
   }
 
-  async function loadHistory(){
-    const wrap = $('historyList');
+  async function getAllLogs(){
     try{
       const res = await storage.list('log:');
-      if(!res || !res.keys || res.keys.length===0){
-        wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
-        return;
-      }
+      if(!res || !res.keys || res.keys.length===0) return [];
       const items = [];
       for(const k of res.keys){
         try{
@@ -914,34 +924,123 @@
           if(r && r.value) items.push(JSON.parse(r.value));
         }catch(e){}
       }
-      items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
-      wrap.innerHTML = items.map(it => `
-        <div class="tl-list-item" data-key="log:${it.id}">
-          <div>
-            <div class="name">${(it.name||'Training').replace(/</g,'&lt;')}</div>
-            <div class="meta">${it.date||''} · ${(it.blocks||[]).length} blokken${it.syncedToIntervals ? ' · <span style="color:var(--accent);font-weight:600;">✓ Intervals.icu</span>' : ''}</div>
-          </div>
-          <div class="meta">bekijk</div>
-        </div>
-      `).join('');
-      Array.from(wrap.children).forEach((el,i)=>{
-        el.addEventListener('click', ()=>{
-          const it = items[i];
-          currentActivity = {id: it.id, name: it.name, date: it.date, pushable: !!it.pushable};
-          blocks = it.blocks || [];
-          expandedBlockId = null;
-          $('blocksTitle').textContent = 'Blokken — ' + it.name;
-          $('plannedNote').innerHTML = '';
-          $('blocksCard').classList.remove('tl-hidden');
-          renderBlocks();
-          updateSyncStatus();
-          $('pushIntervalsBtn').disabled = isManualActivity();
-          $('blocksCard').scrollIntoView({behavior:'smooth', block:'start'});
-        });
-      });
+      return items;
     }catch(e){
-      wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
+      return [];
     }
+  }
+
+  function estimateThresholdPower(blocks, target){
+    const pts = (blocks||[])
+      .filter(b => b.power!=='' && b.power!=null && b.lactate!=='' && b.lactate!=null)
+      .map(b => ({power:Number(b.power), lactate:Number(b.lactate)}))
+      .sort((a,b)=> a.lactate - b.lactate);
+    if(pts.length<2) return null;
+    for(let i=0;i<pts.length-1;i++){
+      const a = pts[i], b = pts[i+1];
+      if(target>=a.lactate && target<=b.lactate){
+        if(b.lactate===a.lactate) return Math.round((a.power+b.power)/2);
+        const frac = (target-a.lactate)/(b.lactate-a.lactate);
+        return Math.round(a.power + frac*(b.power-a.power));
+      }
+    }
+    return null; // doelwaarde valt buiten het gemeten bereik, niet extrapoleren
+  }
+
+  async function renderThresholdChart(items){
+    const wrap = $('thresholdChartWrap');
+    const target = Number($('thresholdTarget').value) || 4.0;
+    const logs = items || await getAllLogs();
+
+    const series = logs.map(log => {
+      const p = estimateThresholdPower(log.blocks, target);
+      return p!=null ? {date: log.date, name: log.name, power: p} : null;
+    }).filter(Boolean).sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+
+    if(series.length===0){
+      wrap.innerHTML = '<p class="tl-empty">Nog geen trainingen met minimaal 2 blokken (vermogen + lactaat) rond deze waarde — vul die aan om de trend te zien.</p>';
+      return;
+    }
+    if(series.length===1){
+      wrap.innerHTML = `<p class="tl-empty">Nog maar 1 meetpunt: <b>${series[0].power}W</b> op ${formatDateNL(series[0].date)}. Sla meer trainingen op om een trend te zien.</p>`;
+      return;
+    }
+
+    const W=680, H=220, padL=46, padR=16, padT=16, padB=30;
+    const plotW=W-padL-padR, plotH=H-padT-padB;
+    const dates = series.map(s=> new Date(s.date+'T00:00:00').getTime());
+    const minD = Math.min(...dates), maxD = Math.max(...dates);
+    const powers = series.map(s=>s.power);
+    let minP = Math.min(...powers), maxP = Math.max(...powers);
+    if(minP===maxP){ minP -= 10; maxP += 10; }
+    const margin = (maxP-minP)*0.15;
+    minP = Math.floor((minP-margin)/5)*5;
+    maxP = Math.ceil((maxP+margin)/5)*5;
+
+    const xPos = d => maxD===minD ? padL+plotW/2 : padL + (d-minD)/(maxD-minD)*plotW;
+    const yPos = p => padT + plotH - (p-minP)/(maxP-minP)*plotH;
+
+    const pts = series.map(s => ({
+      x: xPos(new Date(s.date+'T00:00:00').getTime()),
+      y: yPos(s.power),
+      date: s.date, name: s.name, power: s.power
+    }));
+    const pathD = pts.map((p,i)=> (i===0?'M':'L')+p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ');
+    const circles = pts.map(p => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent)"><title>${formatDateNL(p.date)}${p.name? ' – '+p.name:''}: ${p.power}W</title></circle>`).join('');
+
+    const first = series[0], last = series[series.length-1];
+    const trend = last.power - first.power;
+    const trendTxt = trend===0 ? 'geen verandering' : (trend>0 ? `+${trend}W` : `${trend}W`) + ' sinds ' + formatDateNL(first.date);
+
+    wrap.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">
+        <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+plotH}" stroke="var(--border-light)" stroke-width="1"/>
+        <line x1="${padL}" y1="${padT+plotH}" x2="${padL+plotW}" y2="${padT+plotH}" stroke="var(--border-light)" stroke-width="1"/>
+        <text x="${padL-6}" y="${padT+4}" text-anchor="end" font-size="10" fill="var(--text-faint)">${maxP}W</text>
+        <text x="${padL-6}" y="${padT+plotH+4}" text-anchor="end" font-size="10" fill="var(--text-faint)">${minP}W</text>
+        <text x="${padL}" y="${H-8}" text-anchor="start" font-size="10" fill="var(--text-faint)">${formatDateNL(first.date)}</text>
+        <text x="${padL+plotW}" y="${H-8}" text-anchor="end" font-size="10" fill="var(--text-faint)">${formatDateNL(last.date)}</text>
+        <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+        ${circles}
+      </svg>
+      <div class="tl-hint" style="margin-top:8px;">Laatste: <b style="color:var(--text);">${last.power}W</b> op ${formatDateNL(last.date)} · ${trendTxt}</div>
+    `;
+  }
+
+  async function loadHistory(){
+    const wrap = $('historyList');
+    const items = await getAllLogs();
+    if(items.length===0){
+      wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
+      renderThresholdChart(items);
+      return;
+    }
+    items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+    wrap.innerHTML = items.map(it => `
+      <div class="tl-list-item" data-key="log:${it.id}">
+        <div>
+          <div class="name">${(it.name||'Training').replace(/</g,'&lt;')}</div>
+          <div class="meta">${it.date||''} · ${(it.blocks||[]).length} blokken${it.syncedToIntervals ? ' · <span style="color:var(--accent);font-weight:600;">✓ Intervals.icu</span>' : ''}</div>
+        </div>
+        <div class="meta">bekijk</div>
+      </div>
+    `).join('');
+    Array.from(wrap.children).forEach((el,i)=>{
+      el.addEventListener('click', ()=>{
+        const it = items[i];
+        currentActivity = {id: it.id, name: it.name, date: it.date, pushable: !!it.pushable};
+        blocks = it.blocks || [];
+        expandedBlockId = null;
+        $('blocksTitle').textContent = 'Blokken — ' + it.name;
+        $('plannedNote').innerHTML = '';
+        $('blocksCard').classList.remove('tl-hidden');
+        renderBlocks();
+        updateSyncStatus();
+        $('pushIntervalsBtn').disabled = isManualActivity();
+        $('blocksCard').scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    renderThresholdChart(items);
   }
 
   // wiring
@@ -964,6 +1063,7 @@
   $('blockModalBackdrop').addEventListener('click', (e)=>{
     if(e.target.id==='blockModalBackdrop') closeBlockModal();
   });
+  $('thresholdTarget').addEventListener('input', ()=> renderThresholdChart());
 
   loadSettings();
   loadHistory();
