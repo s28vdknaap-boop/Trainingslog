@@ -1,0 +1,814 @@
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+:root{
+  --bg:#14171A;
+  --panel:#1B1F23;
+  --panel2:#20252A;
+  --border:#2B3238;
+  --border-light:#333B42;
+  --text:#E8EBEE;
+  --text-dim:#8B939B;
+  --text-faint:#5B6369;
+  --power:#4C8DFF;
+  --lactate:#FF6B3D;
+  --good:#3ECF8E;
+  --warn:#FFB020;
+  --bad:#E23B3B;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+.tl-app{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  padding:20px;
+  border-radius:16px;
+  max-width:920px;
+  margin:0 auto;
+}
+.tl-eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--text-faint);
+  margin:0 0 4px 0;
+}
+.tl-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-weight:700;
+  font-size:26px;
+  margin:0 0 18px 0;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.tl-title .dot-power{color:var(--power);}
+.tl-title .dot-lactate{color:var(--lactate);}
+.tl-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:16px 18px;
+  margin-bottom:14px;
+}
+.tl-card h3{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;
+  margin:0 0 12px 0;
+  color:var(--text);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.tl-card h3 .tl-toggle{
+  font-size:11px;
+  color:var(--text-dim);
+  cursor:pointer;
+  font-weight:500;
+  font-family:'Inter',sans-serif;
+}
+.tl-row{display:flex;gap:10px;flex-wrap:wrap;}
+.tl-field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:120px;}
+.tl-field label{font-size:11px;color:var(--text-dim);font-weight:500;}
+.tl-field input, .tl-field select{
+  background:var(--panel2);
+  border:1px solid var(--border-light);
+  color:var(--text);
+  border-radius:7px;
+  padding:8px 10px;
+  font-size:13px;
+  font-family:'IBM Plex Mono',monospace;
+  outline:none;
+}
+.tl-field input:focus, .tl-field select:focus{border-color:var(--power);}
+.tl-field input::placeholder{color:var(--text-faint);font-family:'Inter',sans-serif;}
+.tl-btn{
+  background:var(--power);
+  color:#0A0F14;
+  border:none;
+  border-radius:7px;
+  padding:9px 16px;
+  font-weight:600;
+  font-size:13px;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.tl-btn:hover{filter:brightness(1.1);}
+.tl-btn:disabled{opacity:.5;cursor:default;}
+.tl-btn-ghost{
+  background:transparent;
+  color:var(--text-dim);
+  border:1px solid var(--border-light);
+}
+.tl-btn-ghost:hover{color:var(--text);border-color:var(--text-dim);}
+.tl-btn-lactate{background:var(--lactate);color:#1a0d05;}
+.tl-btn-sm{padding:6px 11px;font-size:12px;}
+.tl-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.tl-hint{font-size:12px;color:var(--text-faint);margin-top:8px;line-height:1.5;}
+.tl-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;}
+.tl-list-item{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 12px;
+  cursor:pointer;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.tl-list-item:hover{border-color:var(--power);}
+.tl-list-item .name{font-weight:600;font-size:13px;}
+.tl-list-item .meta{font-size:11px;color:var(--text-dim);font-family:'IBM Plex Mono',monospace;}
+.tl-empty{color:var(--text-faint);font-size:12.5px;padding:8px 2px;}
+.tl-error{
+  background:rgba(226,59,59,.1);
+  border:1px solid rgba(226,59,59,.35);
+  color:#ff8a8a;
+  border-radius:8px;
+  padding:10px 12px;
+  font-size:12.5px;
+  margin-top:10px;
+}
+.tl-toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--panel2);border:1px solid var(--border-light);
+  color:var(--text);padding:10px 16px;border-radius:8px;font-size:13px;
+  z-index:999;box-shadow:0 6px 20px rgba(0,0,0,.4);opacity:0;transition:opacity .2s;
+  pointer-events:none;
+}
+.tl-toast.show{opacity:1;}
+.tl-toast.err{border-color:var(--bad);color:#ff8a8a;}
+
+.tl-block{
+  background:var(--panel2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  margin-bottom:8px;
+}
+.tl-block-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.tl-block-label{font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;min-width:56px;}
+.tl-zonebar{flex:1;height:6px;background:#0F1215;border-radius:4px;overflow:hidden;position:relative;}
+.tl-zonebar-fill{height:100%;border-radius:4px;transition:width .2s;}
+.tl-remove{cursor:pointer;color:var(--text-faint);font-size:16px;line-height:1;padding:2px 4px;}
+.tl-remove:hover{color:var(--bad);}
+.tl-block-fields{display:flex;gap:8px;flex-wrap:wrap;}
+.tl-block-fields .tl-field{min-width:90px;}
+.tl-block-fields .tl-field.lactate-field input{border-color:rgba(255,107,61,.4);}
+.tl-block-fields .tl-field.lactate-field label{color:var(--lactate);}
+
+.tl-textarea{
+  width:100%;
+  background:var(--panel2);
+  border:1px solid var(--border-light);
+  color:var(--text);
+  border-radius:8px;
+  padding:10px 12px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12.5px;
+  line-height:1.6;
+  min-height:120px;
+  resize:vertical;
+}
+.tl-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--text-dim);}
+.tl-legend span{display:inline-flex;align-items:center;gap:5px;}
+.tl-legend i{width:8px;height:8px;border-radius:50%;display:inline-block;}
+.tl-hidden{display:none !important;}
+@media(max-width:520px){
+  .tl-block-fields .tl-field{min-width:80px;}
+  .tl-title{font-size:21px;}
+}
+</style>
+
+<div class="tl-app">
+  <p class="tl-eyebrow">Trainingsregistratie</p>
+  <h1 class="tl-title"><span class="dot-power">●</span><span class="dot-lactate">●</span> Vermogen &amp; Lactaat Log</h1>
+
+  <div class="tl-card">
+    <h3>Instellingen <span class="tl-toggle" id="settingsToggle">verbergen</span></h3>
+    <div id="settingsBody">
+      <div class="tl-row">
+        <div class="tl-field">
+          <label>Intervals.icu API-key</label>
+          <input id="apiKey" type="password" placeholder="uit Settings &gt; Developer">
+        </div>
+        <div class="tl-field">
+          <label>Athlete ID</label>
+          <input id="athleteId" type="text" placeholder="0 = ikzelf" value="0">
+        </div>
+        <div class="tl-field">
+          <label>FTP (W, voor zonekleur)</label>
+          <input id="ftp" type="number" value="340">
+        </div>
+        <div class="tl-field">
+          <label>WhatsApp nummer (optioneel)</label>
+          <input id="phone" type="text" placeholder="31612345678, leeg = kiezen bij versturen">
+        </div>
+      </div>
+      <div class="tl-actions">
+        <button class="tl-btn" id="saveSettingsBtn">Instellingen opslaan</button>
+      </div>
+      <p class="tl-hint">Je API-key vind je op intervals.icu onder Settings → Developer Settings. Alles wordt alleen bij jou opgeslagen, niet gedeeld.</p>
+    </div>
+  </div>
+
+  <div class="tl-card">
+    <h3>Training ophalen</h3>
+    <div class="tl-actions">
+      <button class="tl-btn" id="fetchPlannedBtn">Geplande week ophalen</button>
+      <button class="tl-btn tl-btn-ghost" id="manualBtn">Handmatig invoeren</button>
+    </div>
+    <p class="tl-hint">Haalt de door je trainer(s) klaargezette trainingen op voor de komende 7 dagen, en zet de blokken (duur + doelvermogen) automatisch klaar.</p>
+
+    <h3 style="margin-top:16px;font-size:12px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.08em;">Of: eerder voltooide training</h3>
+    <div class="tl-row">
+      <div class="tl-field">
+        <label>Van</label>
+        <input id="oldest" type="date">
+      </div>
+      <div class="tl-field">
+        <label>Tot</label>
+        <input id="newest" type="date">
+      </div>
+    </div>
+    <div class="tl-actions">
+      <button class="tl-btn tl-btn-ghost" id="fetchBtn">Voltooide trainingen ophalen</button>
+    </div>
+    <div id="activityListWrap" class="tl-hidden" style="margin-top:12px;">
+      <div class="tl-list" id="activityList"></div>
+    </div>
+    <div id="fetchError"></div>
+  </div>
+
+  <div class="tl-card tl-hidden" id="blocksCard">
+    <h3 id="blocksTitle">Blokken</h3>
+    <div id="plannedNote"></div>
+    <div id="blocksList"></div>
+    <div class="tl-actions">
+      <button class="tl-btn tl-btn-ghost tl-btn-sm" id="addBlockBtn">+ Blok toevoegen</button>
+      <button class="tl-btn tl-btn-sm" id="saveLogBtn">Log opslaan</button>
+    </div>
+    <div class="tl-legend">
+      <span><i style="background:#4C8DFF"></i>Z1-2</span>
+      <span><i style="background:#3ECF8E"></i>Z3</span>
+      <span><i style="background:#FFB020"></i>Z4</span>
+      <span><i style="background:#FF6B3D"></i>Z5</span>
+      <span><i style="background:#E23B3B"></i>Z6+</span>
+    </div>
+
+    <h3 style="margin-top:18px;">Samenvatting</h3>
+    <textarea class="tl-textarea" id="messagePreview"></textarea>
+    <div id="syncStatus" class="tl-hint"></div>
+    <div class="tl-actions">
+      <button class="tl-btn" id="pushIntervalsBtn">Opslaan naar Intervals.icu</button>
+      <button class="tl-btn tl-btn-ghost" id="sendWhatsappBtn">Verstuur via WhatsApp</button>
+    </div>
+  </div>
+
+  <div class="tl-card">
+    <h3>Eerder opgeslagen</h3>
+    <div id="historyList" class="tl-list"><p class="tl-empty">Nog niets opgeslagen.</p></div>
+  </div>
+</div>
+
+<div class="tl-toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  let settings = {apiKey:'', athleteId:'0', ftp:340, phone:''};
+  let blocks = [];
+  let currentActivity = null;
+
+  // Deze app draait standalone in de browser (niet in het Claude-artifact-paneel),
+  // dus window.storage bestaat hier niet. localStorage doet hetzelfde werk,
+  // met dezelfde {key, value}/{keys} vorm zodat de rest van de code ongewijzigd blijft.
+  const storage = {
+    async get(key){
+      try{
+        const raw = localStorage.getItem('tl:'+key);
+        if(raw===null) return null;
+        return {key, value: raw};
+      }catch(e){ return null; }
+    },
+    async set(key, value){
+      localStorage.setItem('tl:'+key, value);
+      return {key, value};
+    },
+    async delete(key){
+      localStorage.removeItem('tl:'+key);
+      return {key, deleted:true};
+    },
+    async list(prefix){
+      const keys = [];
+      for(let i=0;i<localStorage.length;i++){
+        const k = localStorage.key(i);
+        if(k && k.startsWith('tl:')){
+          const shortK = k.slice(3);
+          if(!prefix || shortK.startsWith(prefix)) keys.push(shortK);
+        }
+      }
+      return {keys};
+    }
+  };
+
+  function todayStr(offsetDays){
+    const d = new Date();
+    if(offsetDays) d.setDate(d.getDate()+offsetDays);
+    return d.toISOString().slice(0,10);
+  }
+  function formatDateNL(iso){
+    if(!iso) return '';
+    const d = new Date(iso+'T00:00:00');
+    return d.toLocaleDateString('nl-NL',{day:'numeric',month:'long',year:'numeric'});
+  }
+  function fmtDuration(min){
+    if(min===''||min==null||isNaN(min)) return '';
+    const m = Math.floor(min);
+    const s = Math.round((min-m)*60);
+    return m+':'+String(s).padStart(2,'0');
+  }
+  function fmtClock(seconds){
+    if(seconds==null) return '';
+    const m = Math.floor(seconds/60);
+    return m+' min';
+  }
+  function showToast(msg, isErr){
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'tl-toast show' + (isErr?' err':'');
+    setTimeout(()=>{t.className='tl-toast';}, 3200);
+  }
+  function zoneColor(pct){
+    if(pct==null||pct==='') return '#3A4148';
+    if(pct<56) return '#4C8DFF';
+    if(pct<76) return '#4C8DFF';
+    if(pct<91) return '#3ECF8E';
+    if(pct<106) return '#FFB020';
+    if(pct<121) return '#FF6B3D';
+    return '#E23B3B';
+  }
+
+  async function loadSettings(){
+    try{
+      const r = await storage.get('settings');
+      if(r && r.value) settings = Object.assign(settings, JSON.parse(r.value));
+    }catch(e){ /* geen instellingen opgeslagen, dat is prima */ }
+    $('apiKey').value = settings.apiKey || '';
+    $('athleteId').value = settings.athleteId || '0';
+    $('ftp').value = settings.ftp || 340;
+    $('phone').value = settings.phone || '';
+  }
+  async function saveSettings(){
+    settings.apiKey = $('apiKey').value.trim();
+    settings.athleteId = $('athleteId').value.trim() || '0';
+    settings.ftp = Number($('ftp').value) || 340;
+    settings.phone = $('phone').value.trim();
+    try{
+      await storage.set('settings', JSON.stringify(settings));
+      showToast('Instellingen opgeslagen');
+    }catch(e){
+      showToast('Opslaan van instellingen mislukt: '+e.message, true);
+    }
+  }
+
+  function authHeader(){
+    return 'Basic ' + btoa('API_KEY:' + settings.apiKey);
+  }
+
+  async function fetchActivities(){
+    if(!settings.apiKey){ showToast('Vul eerst je API-key in bij Instellingen', true); return; }
+    const oldest = $('oldest').value, newest = $('newest').value;
+    $('fetchBtn').disabled = true;
+    $('fetchBtn').textContent = 'Ophalen...';
+    $('fetchError').innerHTML = '';
+    try{
+      const url = `https://intervals.icu/api/v1/athlete/${settings.athleteId}/activities?oldest=${oldest}&newest=${newest}`;
+      const res = await fetch(url, {headers:{Authorization: authHeader()}});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      renderActivityList(data);
+    }catch(e){
+      $('fetchError').innerHTML = `<div class="tl-error">Kon geen verbinding maken met intervals.icu (${e.message}). Check je API-key en athlete ID, of vul de training handmatig in.</div>`;
+    } finally{
+      $('fetchBtn').disabled = false;
+      $('fetchBtn').textContent = 'Voltooide trainingen ophalen';
+    }
+  }
+
+  async function fetchPlannedEvents(){
+    if(!settings.apiKey){ showToast('Vul eerst je API-key in bij Instellingen', true); return; }
+    const oldest = todayStr(0), newest = todayStr(7);
+    $('fetchPlannedBtn').disabled = true;
+    $('fetchPlannedBtn').textContent = 'Ophalen...';
+    $('fetchError').innerHTML = '';
+    try{
+      const url = `https://intervals.icu/api/v1/athlete/${settings.athleteId}/events?oldest=${oldest}&newest=${newest}&category=WORKOUT`;
+      const res = await fetch(url, {headers:{Authorization: authHeader()}});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      renderPlannedList(data);
+    }catch(e){
+      $('fetchError').innerHTML = `<div class="tl-error">Kon geplande trainingen niet ophalen (${e.message}). Check je API-key en athlete ID, of vul de training handmatig in.</div>`;
+    } finally{
+      $('fetchPlannedBtn').disabled = false;
+      $('fetchPlannedBtn').textContent = 'Geplande week ophalen';
+    }
+  }
+
+  function renderActivityList(activities){
+    const wrap = $('activityListWrap');
+    const list = $('activityList');
+    if(!activities || activities.length===0){
+      list.innerHTML = '<p class="tl-empty">Geen trainingen gevonden in deze periode.</p>';
+      wrap.classList.remove('tl-hidden');
+      return;
+    }
+    list.innerHTML = activities.map((a,i) => `
+      <div class="tl-list-item" data-idx="${i}">
+        <div>
+          <div class="name">${(a.name||a.type||'Training').replace(/</g,'&lt;')}</div>
+          <div class="meta">${(a.start_date_local||'').slice(0,10)} · ${a.type||''} · ${fmtClock(a.moving_time)}</div>
+        </div>
+        <div class="meta">→</div>
+      </div>
+    `).join('');
+    wrap.classList.remove('tl-hidden');
+    Array.from(list.children).forEach((el,i)=>{
+      el.addEventListener('click', ()=> selectActivity(activities[i]));
+    });
+  }
+
+  function renderPlannedList(events){
+    const wrap = $('activityListWrap');
+    const list = $('activityList');
+    const workouts = (events||[]).filter(e => !e.category || e.category==='WORKOUT');
+    if(workouts.length===0){
+      list.innerHTML = '<p class="tl-empty">Geen geplande trainingen gevonden voor de komende week.</p>';
+      wrap.classList.remove('tl-hidden');
+      return;
+    }
+    list.innerHTML = workouts.map((e,i) => `
+      <div class="tl-list-item" data-idx="${i}">
+        <div>
+          <div class="name">${(e.name||e.type||'Training').replace(/</g,'&lt;')}</div>
+          <div class="meta">${(e.start_date_local||'').slice(0,10)} · ${e.type||''} · gepland</div>
+        </div>
+        <div class="meta">→</div>
+      </div>
+    `).join('');
+    wrap.classList.remove('tl-hidden');
+    Array.from(list.children).forEach((el,i)=>{
+      el.addEventListener('click', ()=> selectPlannedEvent(workouts[i]));
+    });
+  }
+
+  // Parseert de intervals.icu platte-tekst workout-syntax (bv. "- 10m 60%" en
+  // herhaalblokken als "4x" gevolgd door "-"-regels) naar blokken met duur + doelvermogen.
+  function parseWorkoutText(desc){
+    if(!desc) return [];
+    const lines = desc.split('\n').map(l=>l.trim());
+    const steps = [];
+    let pendingRepeat = null;
+    const repeatHeaderRe = /^(.*?)(\d+)\s*x$/i;
+    const durationRe = /(\d+(?:\.\d+)?)\s*(h|m|s)\b/i;
+    const pctRe = /(\d+(?:\.\d+)?)\s*%/;
+    const wattRe = /(\d+(?:\.\d+)?)\s*w\b/i;
+
+    function flushRepeat(){
+      if(pendingRepeat){
+        for(let i=0;i<pendingRepeat.count;i++){
+          pendingRepeat.buffer.forEach(s=>steps.push(Object.assign({}, s, {id:'b'+Math.random().toString(36).slice(2)})));
+        }
+        pendingRepeat = null;
+      }
+    }
+
+    lines.forEach(line=>{
+      if(line.startsWith('-')){
+        const body = line.slice(1).trim();
+        const durMatch = body.match(durationRe);
+        if(!durMatch) return;
+        let durationMin = parseFloat(durMatch[1]);
+        if(durMatch[2].toLowerCase()==='h') durationMin *= 60;
+        if(durMatch[2].toLowerCase()==='s') durationMin /= 60;
+        let power = '';
+        const wattMatch = body.match(wattRe);
+        const pctMatch = body.match(pctRe);
+        if(wattMatch){
+          power = Math.round(parseFloat(wattMatch[1]));
+        } else if(pctMatch && settings.ftp){
+          power = Math.round(settings.ftp * parseFloat(pctMatch[1]) / 100);
+        }
+        const label = body.slice(0, durMatch.index).trim();
+        const step = {id:'b'+Math.random().toString(36).slice(2), duration_min: Math.round(durationMin*10)/10, power: power, hr:'', lactate:'', lactate_target:'', note: label};
+        if(pendingRepeat){
+          pendingRepeat.buffer.push(step);
+        } else {
+          steps.push(step);
+        }
+      } else {
+        const m = line.match(repeatHeaderRe);
+        flushRepeat();
+        if(m){
+          pendingRepeat = {count: parseInt(m[2],10), buffer: []};
+        }
+      }
+    });
+    flushRepeat();
+    return steps;
+  }
+
+  function selectPlannedEvent(ev){
+    currentActivity = {id: 'gepland-'+ev.id, name: ev.name || ev.type || 'Geplande training', date: (ev.start_date_local||'').slice(0,10) || todayStr(), pushable: false};
+    $('blocksTitle').textContent = 'Blokken — ' + currentActivity.name + ' (gepland)';
+    $('plannedNote').innerHTML = '<p class="tl-hint">Blokken zijn voorgevuld op basis van het schema van je trainer (duur + doelvermogen op basis van je ingestelde FTP). Vul lactaat/HF aan tijdens of na de rit. Deze training staat nog niet als voltooide activiteit in Intervals.icu, dus \\"Opslaan naar Intervals.icu\\" is pas beschikbaar zodra je deze daar terugvindt via \\"Voltooide trainingen ophalen\\" na de rit.</p>';
+    blocks = parseWorkoutText(ev.description || '');
+    if(blocks.length===0) showToast('Kon geen blokken uit het schema herkennen — voeg ze handmatig toe');
+    showBlocksCard();
+  }
+
+  async function selectActivity(act){
+    currentActivity = {id: String(act.id), name: act.name || act.type || 'Training', date: (act.start_date_local||'').slice(0,10) || todayStr(), pushable: true};
+    $('blocksTitle').textContent = 'Blokken — ' + currentActivity.name;
+    $('plannedNote').innerHTML = '';
+    try{
+      const res = await fetch(`https://intervals.icu/api/v1/activity/${act.id}?intervals=true`, {headers:{Authorization: authHeader()}});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data = await res.json();
+      const ivs = (data.icu_intervals||[]).filter(iv => iv.type === 'WORK');
+      blocks = ivs.map(iv => ({
+        id: 'b'+Math.random().toString(36).slice(2),
+        duration_min: iv.moving_time ? Math.round((iv.moving_time/60)*10)/10 : '',
+        power: iv.average_watts ? Math.round(iv.average_watts) : '',
+        hr: iv.average_heartrate ? Math.round(iv.average_heartrate) : '',
+        lactate: '',
+        lactate_target: '',
+        note: ''
+      }));
+      if(blocks.length===0) showToast('Geen automatisch gedetecteerde blokken — voeg ze handmatig toe');
+    }catch(e){
+      showToast('Kon blokken niet ophalen. Voeg ze handmatig toe.', true);
+      blocks = [];
+    }
+    showBlocksCard();
+  }
+
+  function manualEntry(){
+    currentActivity = {id: 'handmatig-'+Date.now(), name: 'Training', date: todayStr(), pushable: false};
+    $('blocksTitle').textContent = 'Blokken — handmatige invoer';
+    $('plannedNote').innerHTML = '';
+    blocks = [];
+    showBlocksCard();
+  }
+
+  function showBlocksCard(){
+    $('blocksCard').classList.remove('tl-hidden');
+    if(blocks.length===0) addBlock();
+    renderBlocks();
+    updateSyncStatus();
+    $('pushIntervalsBtn').disabled = isManualActivity();
+    $('blocksCard').scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function addBlock(){
+    blocks.push({id:'b'+Math.random().toString(36).slice(2), duration_min:5, power:'', hr:'', lactate:'', lactate_target:'', note:''});
+    renderBlocks();
+  }
+  function removeBlock(id){
+    blocks = blocks.filter(b=>b.id!==id);
+    renderBlocks();
+  }
+
+  function renderBlocks(){
+    const list = $('blocksList');
+    list.innerHTML = blocks.map((b,i)=>{
+      const pct = (b.power && settings.ftp) ? Math.round((b.power/settings.ftp)*100) : null;
+      const color = zoneColor(pct);
+      const width = pct ? Math.min(pct,150)/1.5 : 0;
+      return `
+      <div class="tl-block" data-id="${b.id}">
+        <div class="tl-block-top">
+          <span class="tl-block-label">Blok ${i+1}</span>
+          <div class="tl-zonebar"><div class="tl-zonebar-fill" style="width:${width}%;background:${color}"></div></div>
+          <span class="tl-remove" data-action="remove" data-id="${b.id}">✕</span>
+        </div>
+        <div class="tl-block-fields">
+          <div class="tl-field lactate-field" style="min-width:110px;">
+            <label>Doel-lactaat</label>
+            <input type="number" step="0.1" inputmode="decimal" value="${b.lactate_target}" data-field="lactate_target" data-id="${b.id}" placeholder="0.0">
+          </div>
+          <div class="tl-field lactate-field" style="min-width:110px;">
+            <label>Lactaat (mmol/L)</label>
+            <input type="number" step="0.1" inputmode="decimal" value="${b.lactate}" data-field="lactate" data-id="${b.id}" placeholder="0.0">
+          </div>
+          <div class="tl-field">
+            <label>Duur (min)</label>
+            <input type="number" step="0.5" inputmode="decimal" value="${b.duration_min}" data-field="duration_min" data-id="${b.id}">
+          </div>
+          <div class="tl-field">
+            <label>Vermogen (W)</label>
+            <input type="number" inputmode="numeric" value="${b.power}" data-field="power" data-id="${b.id}">
+          </div>
+          <div class="tl-field">
+            <label>Hartslag</label>
+            <input type="number" inputmode="numeric" value="${b.hr}" data-field="hr" data-id="${b.id}">
+          </div>
+          <div class="tl-field" style="flex:2;min-width:160px;">
+            <label>Notitie</label>
+            <input type="text" value="${(b.note||'').replace(/"/g,'&quot;')}" data-field="note" data-id="${b.id}" placeholder="optioneel">
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    list.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', (e)=>{
+        const id = e.target.dataset.id, field = e.target.dataset.field;
+        const b = blocks.find(x=>x.id===id);
+        if(!b) return;
+        b[field] = (field==='note') ? e.target.value : (e.target.value===''? '' : Number(e.target.value));
+        if(field==='power' || field==='duration_min') renderBlocks();
+        updateMessagePreview();
+      });
+    });
+    list.querySelectorAll('[data-action="remove"]').forEach(el=>{
+      el.addEventListener('click', (e)=> removeBlock(e.target.dataset.id));
+    });
+    updateMessagePreview();
+  }
+
+  function generateMessage(){
+    if(!currentActivity) return '';
+    let lines = [`🚴 Training ${formatDateNL(currentActivity.date)}${currentActivity.name ? ' – '+currentActivity.name : ''}`, ''];
+    blocks.forEach((b,i)=>{
+      let parts = [`Blok ${i+1}: ${fmtDuration(b.duration_min)} min`];
+      if(b.power!=='' && b.power!=null) parts.push(`@ ${b.power}W`);
+      if(b.hr!=='' && b.hr!=null) parts.push(`(HF ${b.hr})`);
+      let line = parts.join(' ');
+      if(b.lactate_target!=='' && b.lactate_target!=null) line += ` – doel ${b.lactate_target} mmol/L`;
+      if(b.lactate!=='' && b.lactate!=null) line += ` – Lactaat ${b.lactate} mmol/L`;
+      if(b.note) line += ` — ${b.note}`;
+      lines.push(line);
+    });
+    return lines.join('\n');
+  }
+  function updateMessagePreview(){
+    $('messagePreview').value = generateMessage();
+  }
+
+  function sendWhatsapp(){
+    const text = encodeURIComponent($('messagePreview').value);
+    const phone = (settings.phone||'').replace(/[^0-9]/g,'');
+    const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://api.whatsapp.com/send?text=${text}`;
+    window.open(url, '_blank');
+  }
+
+  const LACTATE_MARK_START = '--- Lactaatlog (via Trainingslog-app) ---';
+  const LACTATE_MARK_END = '--- einde lactaatlog ---';
+  function escRe(s){ return s.replace(/[-[\]{}()*+?.,\\^$|#\s]/g,'\\$&'); }
+
+  function isManualActivity(){
+    return !currentActivity || !currentActivity.pushable;
+  }
+
+  function updateSyncStatus(){
+    const el = $('syncStatus');
+    if(!el) return;
+    if(isManualActivity()){
+      el.textContent = 'Kan (nog) niet naar Intervals.icu gepusht worden — gebruik WhatsApp of sla lokaal op.';
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  async function pushToIntervals(){
+    if(isManualActivity()){
+      showToast('Geen gekoppelde Intervals.icu-training — gebruik WhatsApp', true);
+      return;
+    }
+    if(!settings.apiKey){ showToast('Vul eerst je API-key in bij Instellingen', true); return; }
+    const btn = $('pushIntervalsBtn');
+    btn.disabled = true;
+    btn.textContent = 'Opslaan...';
+    try{
+      // eerst bestaande beschrijving ophalen, zodat we niet overschrijven maar aanvullen/vervangen
+      let existingDesc = '';
+      try{
+        const getRes = await fetch(`https://intervals.icu/api/v1/activity/${currentActivity.id}`, {headers:{Authorization: authHeader()}});
+        if(getRes.ok){
+          const actData = await getRes.json();
+          existingDesc = actData.description || '';
+        }
+      }catch(e){ /* als ophalen faalt, gaan we uit van lege bestaande beschrijving */ }
+
+      const block = `${LACTATE_MARK_START}\n${generateMessage()}\n${LACTATE_MARK_END}`;
+      const re = new RegExp(escRe(LACTATE_MARK_START)+'[\\s\\S]*?'+escRe(LACTATE_MARK_END));
+      let newDesc;
+      if(re.test(existingDesc)){
+        newDesc = existingDesc.replace(re, block);
+      } else if(existingDesc.trim()){
+        newDesc = existingDesc.trim() + '\n\n' + block;
+      } else {
+        newDesc = block;
+      }
+
+      const putRes = await fetch(`https://intervals.icu/api/v1/activity/${currentActivity.id}`, {
+        method: 'PUT',
+        headers: {Authorization: authHeader(), 'Content-Type': 'application/json'},
+        body: JSON.stringify({description: newDesc})
+      });
+      if(!putRes.ok) throw new Error('HTTP '+putRes.status);
+
+      await saveLog(true);
+      showToast('Opgeslagen in Intervals.icu ✓');
+    }catch(e){
+      showToast('Opslaan naar Intervals.icu mislukt ('+e.message+'). Gebruik WhatsApp als terugval.', true);
+    } finally{
+      btn.disabled = false;
+      btn.textContent = 'Opslaan naar Intervals.icu';
+    }
+  }
+
+  async function saveLog(synced){
+    if(!currentActivity) return;
+    const key = `log:${currentActivity.id}`;
+    const payload = Object.assign({}, currentActivity, {blocks, savedAt: new Date().toISOString(), syncedToIntervals: !!synced});
+    try{
+      await storage.set(key, JSON.stringify(payload));
+      if(!synced) showToast('Log lokaal opgeslagen');
+      loadHistory();
+    }catch(e){
+      showToast('Opslaan mislukt', true);
+    }
+  }
+
+  async function loadHistory(){
+    const wrap = $('historyList');
+    try{
+      const res = await storage.list('log:');
+      if(!res || !res.keys || res.keys.length===0){
+        wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
+        return;
+      }
+      const items = [];
+      for(const k of res.keys){
+        try{
+          const r = await storage.get(k);
+          if(r && r.value) items.push(JSON.parse(r.value));
+        }catch(e){}
+      }
+      items.sort((a,b)=> (b.date||'').localeCompare(a.date||''));
+      wrap.innerHTML = items.map(it => `
+        <div class="tl-list-item" data-key="log:${it.id}">
+          <div>
+            <div class="name">${(it.name||'Training').replace(/</g,'&lt;')}</div>
+            <div class="meta">${it.date||''} · ${(it.blocks||[]).length} blokken${it.syncedToIntervals ? ' · <span style="color:var(--good)">✓ Intervals.icu</span>' : ''}</div>
+          </div>
+          <div class="meta">bekijk</div>
+        </div>
+      `).join('');
+      Array.from(wrap.children).forEach((el,i)=>{
+        el.addEventListener('click', ()=>{
+          const it = items[i];
+          currentActivity = {id: it.id, name: it.name, date: it.date, pushable: !!it.pushable};
+          blocks = it.blocks || [];
+          $('blocksTitle').textContent = 'Blokken — ' + it.name;
+          $('plannedNote').innerHTML = '';
+          $('blocksCard').classList.remove('tl-hidden');
+          renderBlocks();
+          updateSyncStatus();
+          $('pushIntervalsBtn').disabled = isManualActivity();
+          $('blocksCard').scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      });
+    }catch(e){
+      wrap.innerHTML = '<p class="tl-empty">Nog niets opgeslagen.</p>';
+    }
+  }
+
+  // wiring
+  $('oldest').value = todayStr(-14);
+  $('newest').value = todayStr(0);
+  $('saveSettingsBtn').addEventListener('click', saveSettings);
+  $('fetchBtn').addEventListener('click', fetchActivities);
+  $('fetchPlannedBtn').addEventListener('click', fetchPlannedEvents);
+  $('manualBtn').addEventListener('click', manualEntry);
+  $('addBlockBtn').addEventListener('click', addBlock);
+  $('saveLogBtn').addEventListener('click', ()=>saveLog(false));
+  $('pushIntervalsBtn').addEventListener('click', pushToIntervals);
+  $('sendWhatsappBtn').addEventListener('click', sendWhatsapp);
+  $('messagePreview').addEventListener('input', ()=>{ /* handmatige aanpassing toegestaan */ });
+  $('settingsToggle').addEventListener('click', ()=>{
+    const body = $('settingsBody');
+    const hidden = body.classList.toggle('tl-hidden');
+    $('settingsToggle').textContent = hidden ? 'tonen' : 'verbergen';
+  });
+
+  loadSettings();
+  loadHistory();
+})();
+</script>
