@@ -693,7 +693,7 @@
     return `
       <div class="tl-modal-header">
         <span class="tl-block-label">Blok ${i+1}</span>
-        <button class="tl-modal-close" id="blockModalCloseBtn">✕ Verbergen</button>
+        <button class="tl-modal-close" id="blockModalRemoveBtn" data-id="${b.id}">Verwijder dit blok</button>
       </div>
       <div class="tl-block-fields-lg">
         <div class="tl-field">
@@ -723,7 +723,7 @@
         </div>
       </div>
       <div class="tl-actions">
-        <button class="tl-btn tl-btn-ghost tl-btn-sm" id="blockModalRemoveBtn" data-id="${b.id}">Verwijder dit blok</button>
+        <button class="tl-btn tl-btn-sm" id="blockModalCloseBtn">Opslaan</button>
       </div>`;
   }
 
